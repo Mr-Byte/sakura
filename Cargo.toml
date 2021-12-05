@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "sakurac",
+    "sakura_lexer",
+]
