@@ -5,36 +5,15 @@ use crate::token::Token;
 use crate::token::TokenKind;
 use crate::token::TokenKind::*;
 
-pub struct Lexer;
-
-impl Lexer {
-    pub fn tokenize(mut input: &str) -> impl Iterator<Item = Token> + '_ {
-        std::iter::from_fn(move || {
-            if input.is_empty() {
-                return None;
-            }
-
-            let mut cursor = Tokenizer::new(input);
-            let token = cursor.next_token();
-            input = &input[token.len..];
-
-            Some(token)
-        })
-    }
-}
-
-struct Tokenizer<'a>(Cursor<'a>);
+pub(crate) struct Tokenizer<'a>(Cursor<'a>);
 
 impl Tokenizer<'_> {
     pub(crate) fn new<'a>(input: &'a str) -> Tokenizer<'a> {
         Tokenizer(Cursor::new(input))
     }
 
-    pub(crate) fn next_token(&mut self) -> Token {
-        let next_char = self
-            .0
-            .bump()
-            .expect("lexer unexpectedly reached end of input");
+    pub(crate) fn next_token(&mut self) -> Option<Token> {
+        let next_char = self.0.bump()?;
 
         let token_kind = match next_char {
             '/' => match self.0.first() {
@@ -82,6 +61,7 @@ impl Tokenizer<'_> {
             '^' => Caret,
             '%' => Percent,
 
+            // Strings
             '"' => {
                 let terminated = self.scan_double_quoted_string();
                 let suffix_start = self.0.consumed_len();
@@ -109,10 +89,13 @@ impl Tokenizer<'_> {
             _ => Unknown,
         };
 
-        Token {
+        let token = Token {
             kind: token_kind,
             len: self.0.consumed_len(),
-        }
+        };
+        self.0.reset_len();
+
+        Some(token)
     }
 
     pub(self) fn scan_identifier(&mut self) -> TokenKind {
@@ -174,7 +157,7 @@ impl Tokenizer<'_> {
                     self.scan_decimal_digits()
                 }
                 'x' => {
-                    base = Base::Octal;
+                    base = Base::Hexadecimal;
                     self.0.bump();
                     self.scan_hexadecimal_digits()
                 }

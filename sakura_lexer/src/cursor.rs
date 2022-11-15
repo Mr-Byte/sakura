@@ -46,4 +46,8 @@ impl Cursor<'_> {
     pub fn consumed_len(&self) -> usize {
         self.initial_len - self.chars.as_str().len()
     }
+
+    pub fn reset_len(&mut self) {
+        self.initial_len = self.chars.as_str().len()
+    }
 }

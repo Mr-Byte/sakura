@@ -1,6 +1,2 @@
 [workspace]
-
-members = [
-    "sakurac",
-    "sakura_lexer",
-]
+members = ["sakurac", "sakura_lexer", "sakura_parser"]
