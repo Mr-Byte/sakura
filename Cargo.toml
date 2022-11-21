@@ -1,2 +1,2 @@
 [workspace]
-members = ["sakurac", "sakura_lexer", "sakura_parser"]
+members = ["sakurac", "crates/parser", "crates/lexer", "crates/syntax"]

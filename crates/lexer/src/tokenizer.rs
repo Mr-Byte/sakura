@@ -5,6 +5,9 @@ use crate::token::Token;
 use crate::token::TokenKind;
 use crate::token::TokenKind::*;
 
+// TODO: Handle switching lexing modes for interpolated strings
+// TODO: Handle raw strings (with multiple lines?)
+
 pub(crate) struct Tokenizer<'a>(Cursor<'a>);
 
 impl Tokenizer<'_> {

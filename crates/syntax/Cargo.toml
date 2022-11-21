@@ -1,8 +1,12 @@
 [package]
-name = "sakurac"
+name = "syntax"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-lexer = { path = "../crates/lexer" }
+rowan = "0.15"
+parser = { path = "../parser" }
+
+[dev-dependencies]
+ungrammar = "1.16"
