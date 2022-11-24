@@ -1,13 +1,6 @@
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-#[repr(u16)]
-#[non_exhaustive]
-pub enum SyntaxKind {
-    EOF,
-    WhiteSpace,
-    Comment,
+mod generated;
 
-    SourceFile,
-}
+pub use generated::*;
 
 impl SyntaxKind {
     // TODO: Implement utility functions for checking syntax kinds.
@@ -20,6 +13,7 @@ impl SyntaxKind {
 impl From<u16> for SyntaxKind {
     #[inline]
     fn from(value: u16) -> Self {
+        assert!(value < SyntaxKind::__LAST as u16);
         unsafe { std::mem::transmute(value) }
     }
 }

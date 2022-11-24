@@ -1,0 +1,29 @@
+Name =
+  'ident'
+
+SourceFile =
+  Item*
+
+Item = 
+  TypeDef
+
+TypeDef =
+  'type' Name (Struct | Trait | Enum | Name)
+
+Struct =
+  'struct' '{' RecordFieldList '}'
+
+RecordFieldList =
+  fields:(RecordField (',' RecordField)* ','?)?
+
+RecordField =
+  Name ':' Type
+
+// TODO: Define out the full grammar for acceptable types.
+Type = Name
+
+Trait =
+  'trait'
+
+Enum =
+  'enum'

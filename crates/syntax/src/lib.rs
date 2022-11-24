@@ -31,11 +31,7 @@ pub struct Parse<T> {
 
 impl<T> Parse<T> {
     fn new(green: GreenNode, errors: Vec<SyntaxError>) -> Self {
-        Self {
-            green,
-            errors: Arc::new(errors),
-            _type: PhantomData,
-        }
+        Self { green, errors: Arc::new(errors), _type: PhantomData }
     }
 
     pub fn syntax_node(&self) -> SyntaxNode {
@@ -49,11 +45,7 @@ impl<T> Parse<T> {
 
 impl<T: AstNode> Parse<T> {
     pub fn to_syntax(self) -> Parse<SyntaxNode> {
-        Parse {
-            green: self.green,
-            errors: self.errors,
-            _type: PhantomData,
-        }
+        Parse { green: self.green, errors: self.errors, _type: PhantomData }
     }
 
     pub fn tree(&self) -> T {
@@ -71,11 +63,7 @@ impl Parse<SyntaxNode> {
             return None;
         }
 
-        Some(Parse {
-            green: self.green,
-            errors: self.errors,
-            _type: PhantomData,
-        })
+        Some(Parse { green: self.green, errors: self.errors, _type: PhantomData })
     }
 }
 

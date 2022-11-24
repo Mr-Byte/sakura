@@ -8,5 +8,7 @@ edition = "2021"
 rowan = "0.15"
 parser = { path = "../parser" }
 
-[dev-dependencies]
+[build-dependencies]
 ungrammar = "1.16"
+quote = "1.0"
+xshell = "0.2"
