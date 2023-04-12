@@ -3,8 +3,9 @@ use std::marker::PhantomData;
 
 use binaryen_sys::BinaryenFunctionRef;
 
+#[repr(C)]
 pub struct Function<'module> {
-    pub(crate) inner: BinaryenFunctionRef,
+    inner: BinaryenFunctionRef,
     _marker: std::marker::PhantomData<&'module mut ()>,
 }
 

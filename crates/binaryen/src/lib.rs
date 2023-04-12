@@ -25,9 +25,12 @@ pub(crate) mod test {
         let x = module.local_get(0, Type::i32());
         let y = module.local_get(1, Type::i32());
         let add = module.binary_expr(Operator::add_i32(), x, y);
+        let block = module.block(Some("test"), &[add], Type::i32());
 
-        let _adder = module.add_function("adder", params, results, add);
+        let bigger_block = module.block(None, &[block], Type::i32());
 
+        module.add_function("adder", params, results, bigger_block);
+        module.add_function_export("adder", "add");
         module.print();
     }
 }

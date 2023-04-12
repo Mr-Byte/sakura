@@ -31,7 +31,7 @@ impl Type {
         unsafe { BinaryenTypeArity(self.0) }
     }
 
-    pub(crate) const fn inner(self) -> usize {
+    pub(crate) fn inner(self) -> usize {
         self.0
     }
 }
@@ -152,7 +152,7 @@ impl Type {
 pub struct HeapType(BinaryenHeapType);
 
 impl HeapType {
-    pub(crate) const fn inner(self) -> usize {
+    pub(crate) fn inner(self) -> usize {
         self.0
     }
 
