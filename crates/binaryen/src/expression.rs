@@ -3,7 +3,7 @@ use std::{self, ffi::CString};
 
 use binaryen_sys::{
     BinaryenBinary, BinaryenBlock, BinaryenExpressionRef, BinaryenLocalGet, BinaryenReturn,
-    BinaryenReturnCall, BinaryenUnary,
+    BinaryenUnary,
 };
 
 use crate::{Module, Operator, Type};

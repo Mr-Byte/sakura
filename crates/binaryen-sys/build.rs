@@ -23,7 +23,7 @@ fn main() {
     }
 
     let bindings = bindgen::Builder::default()
-        .header("binaryen/src/binaryen-c.h")
+        .header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
         .expect("Unable to generate bindings");
