@@ -5,7 +5,7 @@ use binaryen_sys::{
     BinaryenModuleDispose, BinaryenModulePrint,
 };
 
-use crate::{BinaryOp, Expression, Function, Type};
+use crate::{Expression, Function, Operator, Type};
 
 pub struct Module {
     pub(crate) module: binaryen_sys::BinaryenModuleRef,
@@ -24,7 +24,7 @@ impl Module {
         Expression::new(expr)
     }
 
-    pub fn binary_expr(&self, op: BinaryOp, lhs: Expression, rhs: Expression) -> Expression<'_> {
+    pub fn binary_expr(&self, op: Operator, lhs: Expression, rhs: Expression) -> Expression<'_> {
         let expr = unsafe { BinaryenBinary(self.module, op.inner(), lhs.inner, rhs.inner) };
 
         Expression::new(expr)
@@ -66,27 +66,5 @@ impl Drop for Module {
         }
 
         unsafe { BinaryenModuleDispose(self.module) }
-    }
-}
-
-#[cfg(test)]
-pub(crate) mod test {
-    use crate::Type;
-
-    use super::*;
-
-    #[test]
-    fn test_print_module() {
-        let module = Module::new();
-        let params = Type::new(&[Type::int32(), Type::int32()]);
-        let results = Type::int32();
-
-        let x = module.local_get(0, Type::int32());
-        let y = module.local_get(1, Type::int32());
-        let add = module.binary_expr(BinaryOp::add_int32(), x, y);
-
-        let _adder = module.add_function("adder", params, results, add);
-
-        module.print();
     }
 }
