@@ -7,5 +7,4 @@ edition = "2021"
 [dependencies]
 
 [build-dependencies]
-sourcegen = { path = "../sourcegen" }
 quote = "1.0"
