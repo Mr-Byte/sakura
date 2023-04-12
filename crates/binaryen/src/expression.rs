@@ -2,7 +2,8 @@ use std::marker::PhantomData;
 use std::{self, ffi::CString};
 
 use binaryen_sys::{
-    BinaryenBinary, BinaryenBlock, BinaryenExpressionRef, BinaryenLocalGet, BinaryenUnary,
+    BinaryenBinary, BinaryenBlock, BinaryenExpressionRef, BinaryenLocalGet, BinaryenReturn,
+    BinaryenReturnCall, BinaryenUnary,
 };
 
 use crate::{Module, Operator, Type};
@@ -43,7 +44,7 @@ impl Module {
         Expression::new(expr)
     }
 
-    pub fn block(&self, name: Option<&str>, children: &[Expression], ty: Type) -> Expression {
+    pub fn block_expr(&self, name: Option<&str>, children: &[Expression], ty: Type) -> Expression {
         let name = name.map(CString::new).transpose().expect("failed to convert C string");
         let expr = unsafe {
             let name_ptr = name.as_ref().map_or(std::ptr::null(), |str| str.as_ptr());
@@ -52,6 +53,12 @@ impl Module {
 
             BinaryenBlock(self.module, name_ptr, children, children_len as u32, ty.inner())
         };
+
+        Expression::new(expr)
+    }
+
+    pub fn return_expr(&self, value: Expression) -> Expression {
+        let expr = unsafe { BinaryenReturn(self.module, value.inner()) };
 
         Expression::new(expr)
     }
