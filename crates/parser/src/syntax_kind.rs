@@ -60,7 +60,6 @@ pub enum SyntaxKind {
     __LAST,
 }
 
-
 impl SyntaxKind {
     // TODO: Implement utility functions for checking syntax kinds.
     #[inline]

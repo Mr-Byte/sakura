@@ -30,7 +30,7 @@ pub(crate) mod test {
 
         let bigger_block = module.expr_block(None, &[block], Type::i32());
 
-        module.add_function("adder", params, results, bigger_block);
+        module.add_function("adder", params, results, bigger_block.clone());
         module.add_function_export("adder", "add");
         module.print();
     }

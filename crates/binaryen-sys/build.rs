@@ -1,4 +1,8 @@
-use std::{path::{PathBuf, Path}, env, process::Command};
+use std::{
+    env,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 fn main() {
     if !Path::new("binaryen/.git").exists() {
@@ -29,10 +33,7 @@ fn main() {
         .expect("Unable to generate bindings");
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    bindings
-        .write_to_file(out_path.join("bindings.rs"))
-        .expect("Couldn't write bindings!");
-
+    bindings.write_to_file(out_path.join("bindings.rs")).expect("Couldn't write bindings!");
 }
 
 // See https://github.com/alexcrichton/gcc-rs/blob/88ac58e25/src/lib.rs#L1197

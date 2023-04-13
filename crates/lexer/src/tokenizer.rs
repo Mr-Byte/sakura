@@ -11,7 +11,7 @@ use crate::token::TokenKind::*;
 pub(crate) struct Tokenizer<'a>(Cursor<'a>);
 
 impl Tokenizer<'_> {
-    pub(crate) fn new<'a>(input: &'a str) -> Tokenizer<'a> {
+    pub(crate) fn new(input: &str) -> Tokenizer<'_> {
         Tokenizer(Cursor::new(input))
     }
 
@@ -33,10 +33,7 @@ impl Tokenizer<'_> {
                 // NOTE: Lex any trailing idenfitiers as a suffix
                 self.scan_identifier();
 
-                TokenKind::Literal {
-                    kind: literal_kind,
-                    suffix_start,
-                }
+                TokenKind::Literal { kind: literal_kind, suffix_start }
             }
 
             // Symbol tokens
@@ -92,10 +89,7 @@ impl Tokenizer<'_> {
             _ => Unknown,
         };
 
-        let token = Token {
-            kind: token_kind,
-            len: self.0.consumed_len(),
-        };
+        let token = Token { kind: token_kind, len: self.0.consumed_len() };
         self.0.reset_len();
 
         Some(token)
@@ -139,9 +133,7 @@ impl Tokenizer<'_> {
             }
         }
 
-        BlockComment {
-            terminated: depth == 0,
-        }
+        BlockComment { terminated: depth == 0 }
     }
 
     pub(self) fn scan_number(&mut self, first_digit: char) -> LiteralKind {
@@ -182,7 +174,7 @@ impl Tokenizer<'_> {
             '.' if self.0.second() != '.' && !is_identifier_start(self.0.second()) => {
                 self.0.bump();
                 let mut empty_exponent = false;
-                if self.0.first().is_digit(10) {
+                if self.0.first().is_ascii_digit() {
                     self.scan_decimal_digits();
                     match self.0.first() {
                         'e' | 'E' => {
@@ -193,18 +185,12 @@ impl Tokenizer<'_> {
                     }
                 }
 
-                LiteralKind::Float {
-                    base,
-                    empty_exponent,
-                }
+                LiteralKind::Float { base, empty_exponent }
             }
             'e' | 'E' => {
                 self.0.bump();
                 let empty_exponent = !self.scan_float_exponent();
-                LiteralKind::Float {
-                    base,
-                    empty_exponent,
-                }
+                LiteralKind::Float { base, empty_exponent }
             }
             _ => LiteralKind::Int { base, empty: false },
         }

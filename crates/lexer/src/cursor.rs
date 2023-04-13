@@ -9,11 +9,8 @@ pub struct Cursor<'a> {
 pub const EOF: char = '\0';
 
 impl Cursor<'_> {
-    pub fn new<'a>(input: &'a str) -> Cursor<'a> {
-        Cursor {
-            initial_len: input.len(),
-            chars: input.chars(),
-        }
+    pub fn new(input: &str) -> Cursor<'_> {
+        Cursor { initial_len: input.len(), chars: input.chars() }
     }
 
     pub fn bump(&mut self) -> Option<char> {
@@ -32,7 +29,7 @@ impl Cursor<'_> {
     }
 
     pub fn first(&self) -> char {
-        self.chars.clone().nth(0).unwrap_or(EOF)
+        self.chars.clone().next().unwrap_or(EOF)
     }
 
     pub fn second(&self) -> char {
