@@ -1,19 +1,25 @@
 use std::marker::PhantomData;
 use std::{self, ffi::CString};
 
-use binaryen_sys::{BinaryenAddFunction, BinaryenAddFunctionExport, BinaryenFunctionRef};
+use binaryen_sys::{
+    BinaryenAddFunction, BinaryenAddFunctionExport, BinaryenFunction, BinaryenFunctionRef,
+};
 
 use crate::{Expression, Module, Type};
 
 #[repr(C)]
 pub struct Function<'module> {
-    inner: BinaryenFunctionRef,
-    _marker: std::marker::PhantomData<&'module mut ()>,
+    inner: std::ptr::NonNull<BinaryenFunction>,
+    _marker: std::marker::PhantomData<&'module mut BinaryenFunction>,
 }
 
 impl<'module> Function<'module> {
     pub(crate) fn new(inner: BinaryenFunctionRef) -> Self {
-        Self { inner, _marker: PhantomData }
+        Self {
+            inner: std::ptr::NonNull::new(inner)
+                .expect("binaryen produced function expression ptr"),
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -35,7 +41,7 @@ impl Module {
                 // TODO: Handle variadic types?
                 std::ptr::null_mut(),
                 0,
-                body.inner(),
+                body.as_ptr(),
             )
         };
 
