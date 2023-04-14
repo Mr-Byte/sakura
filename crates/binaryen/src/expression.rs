@@ -2,12 +2,13 @@ use std::marker::PhantomData;
 use std::{self, ffi::CString};
 
 use binaryen_sys::{
-    BinaryenBinary, BinaryenBlock, BinaryenBreak, BinaryenExpression, BinaryenExpressionRef,
-    BinaryenIf, BinaryenLocalGet, BinaryenLocalSet, BinaryenLoop, BinaryenReturn, BinaryenUnary,
+    BinaryenBinary, BinaryenBlock, BinaryenBreak, BinaryenCall, BinaryenConst, BinaryenExpression,
+    BinaryenExpressionRef, BinaryenIf, BinaryenLocalGet, BinaryenLocalSet, BinaryenLoop,
+    BinaryenReturn, BinaryenSelect, BinaryenUnary,
 };
 
 use crate::unsafe_util::UnsafeMaybe;
-use crate::{Module, Operator, Type};
+use crate::{Literal, Module, Operator, Type};
 
 #[derive(Clone)]
 #[repr(C)]
@@ -17,13 +18,14 @@ pub struct Expression<'module> {
 }
 
 impl<'module> Expression<'module> {
-    pub(crate) fn new(inner: BinaryenExpressionRef) -> Self {
+    fn new(inner: BinaryenExpressionRef) -> Self {
         Self {
             inner: std::ptr::NonNull::new(inner).expect("binaryen produced null expression ptr"),
             _marker: PhantomData,
         }
     }
 
+    #[inline]
     pub(crate) fn as_ptr(&self) -> BinaryenExpressionRef {
         self.inner.as_ptr()
     }
@@ -39,19 +41,29 @@ unsafe impl<'module> UnsafeMaybe for Option<Expression<'module>> {
 
 impl Module {
     pub fn expr_binary(&self, op: Operator, lhs: Expression, rhs: Expression) -> Expression {
-        let expr = unsafe { BinaryenBinary(self.module, op.inner(), lhs.as_ptr(), rhs.as_ptr()) };
+        let expr =
+            unsafe { BinaryenBinary(self.module, op.into_i32(), lhs.as_ptr(), rhs.as_ptr()) };
 
         Expression::new(expr)
     }
 
-    pub fn expr_block(&self, name: Option<&str>, children: &[Expression], ty: Type) -> Expression {
+    pub fn expr_block(
+        &self,
+        name: Option<&str>,
+        children: &mut [Expression],
+        type_: Type,
+    ) -> Expression {
         let name = name.map(CString::new).transpose().expect("failed to convert C string");
         let expr = unsafe {
             let name_ptr = name.as_ref().map_or(std::ptr::null(), |str| str.as_ptr());
-            let children_len = children.len();
-            let children: *mut BinaryenExpressionRef = std::mem::transmute(children.as_ptr());
 
-            BinaryenBlock(self.module, name_ptr, children, children_len as u32, ty.inner())
+            BinaryenBlock(
+                self.module,
+                name_ptr,
+                children.as_mut_ptr() as *mut BinaryenExpressionRef,
+                children.len() as u32,
+                type_.into_usize(),
+            )
         };
 
         Expression::new(expr)
@@ -70,6 +82,33 @@ impl Module {
         Expression::new(expr)
     }
 
+    pub fn expr_call(
+        &self,
+        target: &str,
+        args: &mut [Expression<'_>],
+        return_type: Type,
+    ) -> Expression {
+        let target = CString::new(target).expect("failed to convert C string");
+        let expr = unsafe {
+            BinaryenCall(
+                self.module,
+                target.as_ptr(),
+                args.as_mut_ptr() as *mut BinaryenExpressionRef,
+                args.len() as u32,
+                return_type.into_usize(),
+            )
+        };
+
+        Expression::new(expr)
+    }
+
+    //TODO: Determine if tail calls are needed.
+
+    pub fn expr_const(&self, value: Literal) -> Expression {
+        let expr = unsafe { BinaryenConst(self.module, value.into_inner()) };
+        Expression::new(expr)
+    }
+
     pub fn expr_if(
         &self,
         condition: Expression,
@@ -84,7 +123,7 @@ impl Module {
     }
 
     pub fn expr_local_get(&self, index: u32, ty: Type) -> Expression {
-        let expr = unsafe { BinaryenLocalGet(self.module, index, ty.inner()) };
+        let expr = unsafe { BinaryenLocalGet(self.module, index, ty.into_usize()) };
 
         Expression::new(expr)
     }
@@ -108,8 +147,28 @@ impl Module {
         Expression::new(expr)
     }
 
+    pub fn expr_select(
+        &self,
+        condition: Expression,
+        if_true: Expression,
+        if_false: Expression,
+        type_: Type,
+    ) -> Expression {
+        let expr = unsafe {
+            BinaryenSelect(
+                self.module,
+                condition.as_ptr(),
+                if_true.as_ptr(),
+                if_false.as_ptr(),
+                type_.into_usize(),
+            )
+        };
+
+        Expression::new(expr)
+    }
+
     pub fn expr_unary(&self, op: Operator, expr: Expression) -> Expression {
-        let expr = unsafe { BinaryenUnary(self.module, op.inner(), expr.as_ptr()) };
+        let expr = unsafe { BinaryenUnary(self.module, op.into_i32(), expr.as_ptr()) };
 
         Expression::new(expr)
     }

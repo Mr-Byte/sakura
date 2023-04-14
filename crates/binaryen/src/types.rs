@@ -7,14 +7,15 @@ use binaryen_sys::{
     BinaryenHeapTypeStringviewIter, BinaryenHeapTypeStringviewWTF16,
     BinaryenHeapTypeStringviewWTF8, BinaryenHeapTypeStruct, BinaryenType, BinaryenTypeAnyref,
     BinaryenTypeArity, BinaryenTypeArrayref, BinaryenTypeAuto, BinaryenTypeCreate,
-    BinaryenTypeEqref, BinaryenTypeExternref, BinaryenTypeFloat32, BinaryenTypeFloat64,
-    BinaryenTypeFuncref, BinaryenTypeI31ref, BinaryenTypeInt32, BinaryenTypeInt64,
-    BinaryenTypeNone, BinaryenTypeNullExternref, BinaryenTypeNullFuncref, BinaryenTypeNullref,
-    BinaryenTypeStringref, BinaryenTypeStringviewIter, BinaryenTypeStringviewWTF16,
-    BinaryenTypeStringviewWTF8, BinaryenTypeStructref, BinaryenTypeUnreachable, BinaryenTypeVec128,
+    BinaryenTypeEqref, BinaryenTypeExpand, BinaryenTypeExternref, BinaryenTypeFloat32,
+    BinaryenTypeFloat64, BinaryenTypeFromHeapType, BinaryenTypeFuncref, BinaryenTypeI31ref,
+    BinaryenTypeInt32, BinaryenTypeInt64, BinaryenTypeNone, BinaryenTypeNullExternref,
+    BinaryenTypeNullFuncref, BinaryenTypeNullref, BinaryenTypeStringref,
+    BinaryenTypeStringviewIter, BinaryenTypeStringviewWTF16, BinaryenTypeStringviewWTF8,
+    BinaryenTypeStructref, BinaryenTypeUnreachable, BinaryenTypeVec128,
 };
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Type(BinaryenType);
 
 impl Type {
@@ -31,7 +32,19 @@ impl Type {
         unsafe { BinaryenTypeArity(self.0) }
     }
 
-    pub(crate) fn inner(self) -> usize {
+    pub fn expand(self) -> Vec<Type> {
+        let size = self.arity() as usize;
+
+        unsafe {
+            let mut buffer = std::mem::ManuallyDrop::new(vec![0; size]);
+            BinaryenTypeExpand(self.0, buffer.as_mut_ptr());
+
+            Vec::from_raw_parts(buffer.as_mut_ptr() as *mut Type, buffer.len(), buffer.capacity())
+        }
+    }
+
+    #[inline]
+    pub(crate) fn into_usize(self) -> usize {
         self.0
     }
 }
@@ -148,12 +161,19 @@ impl Type {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct HeapType(BinaryenHeapType);
 
 impl HeapType {
-    pub(crate) fn inner(self) -> usize {
+    #[inline]
+    pub(crate) fn into_usize(self) -> usize {
         self.0
+    }
+
+    pub fn into_type(self, nullable: bool) -> Type {
+        let ty = unsafe { BinaryenTypeFromHeapType(self.0, nullable) };
+
+        Type(ty)
     }
 
     pub fn is_array(self) -> bool {
@@ -255,5 +275,20 @@ impl HeapType {
     pub fn no_func() -> HeapType {
         let ty = unsafe { BinaryenHeapTypeNofunc() };
         HeapType(ty)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn type_expand_doesnt_explode_because_unsafe_code() {
+        let composite_type = Type::new(&[Type::i32(), Type::i64()]);
+        let expanded = composite_type.expand();
+
+        assert_eq!(2, expanded.len(), "expanded type length is not correct");
+        assert_eq!(Type::i32(), expanded[0], "first type was not i32");
+        assert_eq!(Type::i64(), expanded[1], "second type was not i32")
     }
 }

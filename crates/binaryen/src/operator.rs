@@ -3,7 +3,8 @@
 pub struct Operator(i32);
 
 impl Operator {
-    pub(crate) fn inner(self) -> i32 {
+    #[inline]
+    pub(crate) fn into_i32(self) -> i32 {
         self.0
     }
 }

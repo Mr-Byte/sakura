@@ -3,6 +3,7 @@ use std::{self, ffi::CString};
 
 use binaryen_sys::{
     BinaryenAddFunction, BinaryenAddFunctionExport, BinaryenFunction, BinaryenFunctionRef,
+    BinaryenSetStart,
 };
 
 use crate::{Expression, Module, Type};
@@ -14,7 +15,7 @@ pub struct Function<'module> {
 }
 
 impl<'module> Function<'module> {
-    pub(crate) fn new(inner: BinaryenFunctionRef) -> Self {
+    fn new(inner: BinaryenFunctionRef) -> Self {
         Self {
             inner: std::ptr::NonNull::new(inner)
                 .expect("binaryen produced function expression ptr"),
@@ -24,6 +25,10 @@ impl<'module> Function<'module> {
 }
 
 impl Module {
+    pub fn set_start(&self, mut start: Function) {
+        unsafe { BinaryenSetStart(self.module, start.inner.as_mut()) };
+    }
+
     pub fn add_function(
         &self,
         name: &str,
@@ -36,8 +41,8 @@ impl Module {
             BinaryenAddFunction(
                 self.module,
                 name.as_ptr(),
-                params.inner(),
-                results.inner(),
+                params.into_usize(),
+                results.into_usize(),
                 // TODO: Handle variadic types?
                 std::ptr::null_mut(),
                 0,
