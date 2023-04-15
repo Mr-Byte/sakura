@@ -26,7 +26,7 @@ impl<'module> Expression<'module> {
     }
 
     #[inline]
-    pub(crate) fn as_ptr(&self) -> BinaryenExpressionRef {
+    pub(crate) fn as_ptr(&mut self) -> BinaryenExpressionRef {
         self.inner.as_ptr()
     }
 }
@@ -34,13 +34,18 @@ impl<'module> Expression<'module> {
 unsafe impl<'module> UnsafeMaybe for Option<Expression<'module>> {
     type Out = BinaryenExpression;
 
-    fn as_ptr(self: Self) -> *mut Self::Out {
-        unsafe { std::mem::transmute(self) }
+    fn as_ptr_or_null(self: &mut Self) -> *mut Self::Out {
+        self.as_mut().map_or(std::ptr::null_mut(), Expression::as_ptr)
     }
 }
 
 impl Module {
-    pub fn expr_binary(&self, op: Operator, lhs: Expression, rhs: Expression) -> Expression {
+    pub fn expr_binary(
+        &self,
+        op: Operator,
+        mut lhs: Expression,
+        mut rhs: Expression,
+    ) -> Expression {
         let expr =
             unsafe { BinaryenBinary(self.module, op.into_i32(), lhs.as_ptr(), rhs.as_ptr()) };
 
@@ -72,12 +77,17 @@ impl Module {
     pub fn expr_break(
         &self,
         name: &str,
-        condition: Option<Expression>,
-        value: Option<Expression>,
+        mut condition: Option<Expression>,
+        mut value: Option<Expression>,
     ) -> Expression {
         let name = CString::new(name).expect("failed to convert C string");
         let expr = unsafe {
-            BinaryenBreak(self.module, name.as_ptr(), condition.as_ptr(), value.as_ptr())
+            BinaryenBreak(
+                self.module,
+                name.as_ptr(),
+                condition.as_ptr_or_null(),
+                value.as_ptr_or_null(),
+            )
         };
         Expression::new(expr)
     }
@@ -111,12 +121,12 @@ impl Module {
 
     pub fn expr_if(
         &self,
-        condition: Expression,
-        if_true: Expression,
-        if_false: Option<Expression>,
+        mut condition: Expression,
+        mut if_true: Expression,
+        mut if_false: Option<Expression>,
     ) -> Expression {
         let expr = unsafe {
-            BinaryenIf(self.module, condition.as_ptr(), if_true.as_ptr(), if_false.as_ptr())
+            BinaryenIf(self.module, condition.as_ptr(), if_true.as_ptr(), if_false.as_ptr_or_null())
         };
 
         Expression::new(expr)
@@ -128,20 +138,20 @@ impl Module {
         Expression::new(expr)
     }
 
-    pub fn expr_local_set(&self, index: u32, value: Expression) -> Expression {
+    pub fn expr_local_set(&self, index: u32, mut value: Expression) -> Expression {
         let expr = unsafe { BinaryenLocalSet(self.module, index, value.as_ptr()) };
 
         Expression::new(expr)
     }
 
-    pub fn expr_loop(&self, label: &str, body: Expression) -> Expression {
+    pub fn expr_loop(&self, label: &str, mut body: Expression) -> Expression {
         let label = CString::new(label).expect("failed to convert C string");
         let expr = unsafe { BinaryenLoop(self.module, label.as_ptr(), body.as_ptr()) };
 
         Expression::new(expr)
     }
 
-    pub fn expr_return(&self, value: Expression) -> Expression {
+    pub fn expr_return(&self, mut value: Expression) -> Expression {
         let expr = unsafe { BinaryenReturn(self.module, value.as_ptr()) };
 
         Expression::new(expr)
@@ -149,9 +159,9 @@ impl Module {
 
     pub fn expr_select(
         &self,
-        condition: Expression,
-        if_true: Expression,
-        if_false: Expression,
+        mut condition: Expression,
+        mut if_true: Expression,
+        mut if_false: Expression,
         type_: Type,
     ) -> Expression {
         let expr = unsafe {
@@ -167,7 +177,7 @@ impl Module {
         Expression::new(expr)
     }
 
-    pub fn expr_unary(&self, op: Operator, expr: Expression) -> Expression {
+    pub fn expr_unary(&self, op: Operator, mut expr: Expression) -> Expression {
         let expr = unsafe { BinaryenUnary(self.module, op.into_i32(), expr.as_ptr()) };
 
         Expression::new(expr)
