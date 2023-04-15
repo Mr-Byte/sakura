@@ -34,7 +34,7 @@ impl Module {
         name: &str,
         params: Type,
         results: Type,
-        mut body: Expression,
+        body: Expression,
     ) -> Function<'_> {
         let name = CString::new(name).expect("failed to convert C string");
         let func = unsafe {
