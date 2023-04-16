@@ -11,7 +11,7 @@ use crate::token::TokenKind::*;
 #[derive(Debug, PartialEq, Eq)]
 enum TokenizerMode {
     Main,
-    StringPart,
+    DoubleQuoteStringPart,
 }
 
 pub(crate) struct Tokenizer<'a> {
@@ -31,7 +31,7 @@ impl Tokenizer<'_> {
     pub(crate) fn next_token(&mut self) -> Option<Token> {
         let kind = match self.mode_stack.last() {
             Some(TokenizerMode::Main) => self.scan_main()?,
-            Some(TokenizerMode::StringPart) => self.scan_string_part(),
+            Some(TokenizerMode::DoubleQuoteStringPart) => self.scan_double_quoted_string_part(),
             None => unreachable!("ICE: Underran tokenizer mode stack, this is a bug!"),
         };
 
@@ -96,7 +96,7 @@ impl Tokenizer<'_> {
 
             // Strings
             '"' => {
-                self.mode_stack.push(TokenizerMode::StringPart);
+                self.mode_stack.push(TokenizerMode::DoubleQuoteStringPart);
                 self.scan_double_quoted_string_literal()
             }
             '\'' => {
@@ -117,7 +117,7 @@ impl Tokenizer<'_> {
         Some(kind)
     }
 
-    fn scan_string_part(&mut self) -> TokenKind {
+    fn scan_double_quoted_string_part(&mut self) -> TokenKind {
         if self.cursor.first() == '$' && self.cursor.second() == '{' {
             // NOTE: Consume both tokens.
             self.cursor.bump();
@@ -301,7 +301,7 @@ impl Tokenizer<'_> {
                 Some(c) => match c {
                     '"' => {
                         let mode = self.mode_stack.pop();
-                        debug_assert_eq!(Some(TokenizerMode::StringPart), mode);
+                        debug_assert_eq!(Some(TokenizerMode::DoubleQuoteStringPart), mode);
 
                         return true;
                     }
