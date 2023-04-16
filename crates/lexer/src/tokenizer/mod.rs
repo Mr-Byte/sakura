@@ -330,7 +330,10 @@ impl Tokenizer<'_> {
 
     fn scan_double_quoted_string_literal(&mut self) -> bool {
         loop {
-            if self.cursor.first() == '$' {
+            let first = self.cursor.first();
+            let second = self.cursor.second();
+
+            if first == '$' && (second == '{' || symbol::is_identifier_start(second)) {
                 return false;
             }
 
