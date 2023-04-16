@@ -1,18 +1,14 @@
 # Building
 
 ## macOS
-
-First time:
-
+### Setup
 ```
 brew install cmake llvm
 brew link llvm --force
 ```
 
 ## Windows
-
-First time:
-
+### Setup
 ```
 winget install cmake
 winget install llvm
