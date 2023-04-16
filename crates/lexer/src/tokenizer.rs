@@ -5,7 +5,6 @@ use crate::token::Token;
 use crate::token::TokenKind;
 use crate::token::TokenKind::*;
 
-// TODO: Handle switching lexing modes for interpolated strings
 // TODO: Handle raw strings (with multiple lines?)
 
 #[derive(Debug, PartialEq, Eq)]
@@ -118,16 +117,20 @@ impl Tokenizer<'_> {
     }
 
     fn scan_double_quoted_string_part(&mut self) -> TokenKind {
-        if self.cursor.first() == '$' && self.cursor.second() == '{' {
-            // NOTE: Consume both tokens.
-            self.cursor.bump();
-            self.cursor.bump();
-            self.mode_stack.push(TokenizerMode::Main);
+        match self.cursor.first() {
+            '$' => {
+                self.cursor.bump();
 
-            return TokenKind::StringSlotOpen;
+                return TokenKind::Dollar;
+            }
+            '{' => {
+                self.cursor.bump();
+                self.mode_stack.push(TokenizerMode::Main);
+
+                return TokenKind::OpenBrace;
+            }
+            _ => self.scan_double_quoted_string_literal(),
         }
-
-        self.scan_double_quoted_string_literal()
     }
 
     fn scan_double_quoted_string_literal(&mut self) -> TokenKind {

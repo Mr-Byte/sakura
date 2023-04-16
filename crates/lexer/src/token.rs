@@ -60,8 +60,6 @@ pub enum TokenKind {
     Caret,
     /// %
     Percent,
-    /// ${
-    StringSlotOpen,
 
     LineComment,
     BlockComment {
