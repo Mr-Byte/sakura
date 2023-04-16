@@ -5,7 +5,7 @@ use crate::token::Token;
 use crate::token::TokenKind;
 use crate::token::TokenKind::*;
 
-// TODO: Handle raw strings (with multiple lines?)
+mod symbol;
 
 #[derive(Debug, PartialEq, Eq)]
 enum TokenizerMode {
@@ -18,6 +18,8 @@ pub(crate) struct Tokenizer<'a> {
     mode_stack: Vec<TokenizerMode>,
 }
 
+/// Implement the core functionality of the tokenizer. This includes the core state machine and handling
+/// which lexer mode to dispatch when `next_token` is called.
 impl Tokenizer<'_> {
     const DEFAULT_MODE_STACK_CAPACITY: usize = 4;
 
@@ -48,14 +50,17 @@ impl Tokenizer<'_> {
     fn next_token_default(&mut self) -> Option<TokenKind> {
         let next_char = self.cursor.bump()?;
         let kind = match next_char {
+            // Comments
             '/' => match self.cursor.first() {
                 '/' => self.scan_line_comment(),
                 '*' => self.scan_block_comment(),
                 _ => Slash,
             },
-
+            // Whitespace
             c if char::is_whitespace(c) => self.scan_whitespace(),
-            c if is_identifier_start(c) => self.scan_identifier(),
+            // Identifiers
+            c if symbol::is_identifier_start(c) => self.scan_identifier(),
+            // Numbers
             c @ '0'..='9' => {
                 let literal_kind = self.scan_number(c);
                 let suffix_start = self.cursor.consumed_len();
@@ -70,7 +75,59 @@ impl Tokenizer<'_> {
 
                 TokenKind::Literal { kind: literal_kind, suffix_start }
             }
+            // Strings
+            '"' => {
+                self.mode_stack.push(TokenizerMode::InterpolatedString);
+                self.scan_double_quoted_string()
+            }
+            '\'' => {
+                let terminated = self.scan_single_quoted_string();
+                let suffix_start = self.cursor.consumed_len();
 
+                if terminated {
+                    self.scan_identifier();
+                }
+
+                let kind = LiteralKind::Char { terminated };
+                let suffix_start = if self.cursor.consumed_len() > suffix_start {
+                    Some(suffix_start)
+                } else {
+                    None
+                };
+
+                Literal { kind, suffix_start }
+            }
+            // Symbols
+            c => self.scan_symbol(c),
+        };
+
+        Some(kind)
+    }
+
+    /// Scan tokens that are part of interpolated strings as represented by the `InterpolatedString` state.
+    fn next_token_interpolated_string(&mut self) -> TokenKind {
+        match self.cursor.first() {
+            '$' => {
+                self.cursor.bump();
+
+                return TokenKind::Dollar;
+            }
+            '{' => {
+                self.cursor.bump();
+                self.mode_stack.push(TokenizerMode::Default);
+
+                return TokenKind::OpenBrace;
+            }
+            c if symbol::is_identifier_start(c) => self.scan_identifier(),
+            _ => self.scan_double_quoted_string(),
+        }
+    }
+}
+
+/// Implement complex scanners for various tokens.
+impl Tokenizer<'_> {
+    fn scan_symbol(&mut self, c: char) -> TokenKind {
+        match c {
             // Symbol tokens
             ',' => Comma,
             '.' => Dot,
@@ -103,56 +160,12 @@ impl Tokenizer<'_> {
             '|' => Or,
             '^' => Caret,
             '%' => Percent,
-
-            // Strings
-            '"' => {
-                self.mode_stack.push(TokenizerMode::InterpolatedString);
-                self.scan_double_quoted_string()
-            }
-            '\'' => {
-                let terminated = self.scan_single_quoted_string();
-                let suffix_start = self.cursor.consumed_len();
-
-                if terminated {
-                    self.scan_identifier();
-                }
-
-                let kind = LiteralKind::Char { terminated };
-                let suffix_start = if self.cursor.consumed_len() > suffix_start {
-                    Some(suffix_start)
-                } else {
-                    None
-                };
-
-                Literal { kind, suffix_start }
-            }
             _ => Unknown,
-        };
-
-        Some(kind)
-    }
-
-    /// Scan tokens that are part of interpolated strings as represented by the `InterpolatedString` state.
-    fn next_token_interpolated_string(&mut self) -> TokenKind {
-        match self.cursor.first() {
-            '$' => {
-                self.cursor.bump();
-
-                return TokenKind::Dollar;
-            }
-            '{' => {
-                self.cursor.bump();
-                self.mode_stack.push(TokenizerMode::Default);
-
-                return TokenKind::OpenBrace;
-            }
-            c if is_identifier_start(c) => self.scan_identifier(),
-            _ => self.scan_double_quoted_string(),
         }
     }
 
     fn scan_identifier(&mut self) -> TokenKind {
-        self.cursor.bump_while(is_identifier_continue);
+        self.cursor.bump_while(symbol::is_identifier_continue);
         Identifier
     }
 
@@ -227,7 +240,9 @@ impl Tokenizer<'_> {
         }
 
         match self.cursor.first() {
-            '.' if self.cursor.second() != '.' && !is_identifier_start(self.cursor.second()) => {
+            '.' if self.cursor.second() != '.'
+                && !symbol::is_identifier_start(self.cursor.second()) =>
+            {
                 self.cursor.bump();
                 let mut empty_exponent = false;
                 if self.cursor.first().is_ascii_digit() {
@@ -328,7 +343,7 @@ impl Tokenizer<'_> {
 
                         return true;
                     }
-                    '\\' if is_reserved_string_symbol(self.cursor.first()) => {
+                    '\\' if symbol::is_reserved_string_symbol(self.cursor.first()) => {
                         self.cursor.bump();
                     }
                     _ => (),
@@ -351,16 +366,4 @@ impl Tokenizer<'_> {
 
         false
     }
-}
-
-fn is_identifier_start(c: char) -> bool {
-    c == '_' || unicode_xid::UnicodeXID::is_xid_start(c)
-}
-
-fn is_identifier_continue(c: char) -> bool {
-    unicode_xid::UnicodeXID::is_xid_continue(c)
-}
-
-fn is_reserved_string_symbol(c: char) -> bool {
-    c == '\\' || c == '"' || c == '$'
 }
