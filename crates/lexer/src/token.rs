@@ -69,7 +69,7 @@ pub enum TokenKind {
     Identifier,
     Literal {
         kind: LiteralKind,
-        suffix_start: usize,
+        suffix_start: Option<usize>,
     },
     Unknown,
 }

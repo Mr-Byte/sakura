@@ -24,7 +24,10 @@ mod test {
 
         assert_eq!(6, tokens.len());
         assert_eq!(
-            TokenKind::Literal { kind: LiteralKind::String { terminated: false }, suffix_start: 1 },
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: false },
+                suffix_start: None
+            },
             tokens[0].kind
         );
         assert_eq!(TokenKind::Dollar, tokens[1].kind);
@@ -32,7 +35,10 @@ mod test {
         assert_eq!(TokenKind::Identifier, tokens[3].kind);
         assert_eq!(TokenKind::CloseBrace, tokens[4].kind);
         assert_eq!(
-            TokenKind::Literal { kind: LiteralKind::String { terminated: true }, suffix_start: 1 },
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: true },
+                suffix_start: None
+            },
             tokens[5].kind
         );
     }

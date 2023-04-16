@@ -9,8 +9,8 @@ use crate::token::TokenKind::*;
 
 #[derive(Debug, PartialEq, Eq)]
 enum TokenizerMode {
-    Main,
-    DoubleQuoteStringPart,
+    Default,
+    InterpolatedString,
 }
 
 pub(crate) struct Tokenizer<'a> {
@@ -19,19 +19,23 @@ pub(crate) struct Tokenizer<'a> {
 }
 
 impl Tokenizer<'_> {
+    const DEFAULT_MODE_STACK_CAPACITY: usize = 4;
+
     pub(crate) fn new(input: &str) -> Tokenizer<'_> {
         let cursor = Cursor::new(input);
-        let mut mode_stack = Vec::with_capacity(4);
-        mode_stack.push(TokenizerMode::Main);
+        let mut mode_stack = Vec::with_capacity(Self::DEFAULT_MODE_STACK_CAPACITY);
+        mode_stack.push(TokenizerMode::Default);
 
         Tokenizer { cursor, mode_stack }
     }
 
     pub(crate) fn next_token(&mut self) -> Option<Token> {
         let kind = match self.mode_stack.last() {
-            Some(TokenizerMode::Main) => self.scan_main()?,
-            Some(TokenizerMode::DoubleQuoteStringPart) => self.scan_double_quoted_string_part(),
-            None => unreachable!("ICE: Underran tokenizer mode stack, this is a bug!"),
+            Some(TokenizerMode::Default) => self.next_token_default()?,
+            Some(TokenizerMode::InterpolatedString) => self.next_token_interpolated_string(),
+            None => {
+                unreachable!("ICE: Underflow of the tokenizer mode stack occurred. This is a bug.")
+            }
         };
 
         let token = Token { kind, len: self.cursor.consumed_len() };
@@ -40,7 +44,8 @@ impl Tokenizer<'_> {
         Some(token)
     }
 
-    fn scan_main(&mut self) -> Option<TokenKind> {
+    /// Scan tokens that constitute the primary portion of the language as represented by the `Default` state.
+    fn next_token_default(&mut self) -> Option<TokenKind> {
         let next_char = self.cursor.bump()?;
         let kind = match next_char {
             '/' => match self.cursor.first() {
@@ -57,6 +62,12 @@ impl Tokenizer<'_> {
                 // NOTE: Lex any trailing idenfitiers as a suffix
                 self.scan_identifier();
 
+                let suffix_start = if self.cursor.consumed_len() > suffix_start {
+                    Some(suffix_start)
+                } else {
+                    None
+                };
+
                 TokenKind::Literal { kind: literal_kind, suffix_start }
             }
 
@@ -66,12 +77,12 @@ impl Tokenizer<'_> {
             '(' => OpenParen,
             ')' => CloseParen,
             '{' => {
-                self.mode_stack.push(TokenizerMode::Main);
+                self.mode_stack.push(TokenizerMode::Default);
                 OpenBrace
             }
             '}' => {
                 let mode = self.mode_stack.pop();
-                debug_assert_eq!(Some(TokenizerMode::Main), mode);
+                debug_assert_eq!(Some(TokenizerMode::Default), mode);
 
                 CloseBrace
             }
@@ -95,8 +106,8 @@ impl Tokenizer<'_> {
 
             // Strings
             '"' => {
-                self.mode_stack.push(TokenizerMode::DoubleQuoteStringPart);
-                self.scan_double_quoted_string_literal()
+                self.mode_stack.push(TokenizerMode::InterpolatedString);
+                self.scan_double_quoted_string()
             }
             '\'' => {
                 let terminated = self.scan_single_quoted_string();
@@ -107,6 +118,11 @@ impl Tokenizer<'_> {
                 }
 
                 let kind = LiteralKind::Char { terminated };
+                let suffix_start = if self.cursor.consumed_len() > suffix_start {
+                    Some(suffix_start)
+                } else {
+                    None
+                };
 
                 Literal { kind, suffix_start }
             }
@@ -116,7 +132,8 @@ impl Tokenizer<'_> {
         Some(kind)
     }
 
-    fn scan_double_quoted_string_part(&mut self) -> TokenKind {
+    /// Scan tokens that are part of interpolated strings as represented by the `InterpolatedString` state.
+    fn next_token_interpolated_string(&mut self) -> TokenKind {
         match self.cursor.first() {
             '$' => {
                 self.cursor.bump();
@@ -125,25 +142,12 @@ impl Tokenizer<'_> {
             }
             '{' => {
                 self.cursor.bump();
-                self.mode_stack.push(TokenizerMode::Main);
+                self.mode_stack.push(TokenizerMode::Default);
 
                 return TokenKind::OpenBrace;
             }
-            _ => self.scan_double_quoted_string_literal(),
+            _ => self.scan_double_quoted_string(),
         }
-    }
-
-    fn scan_double_quoted_string_literal(&mut self) -> TokenKind {
-        let terminated = self.scan_double_quoted_string();
-        let suffix_start = self.cursor.consumed_len();
-
-        if terminated {
-            self.scan_identifier();
-        }
-
-        let kind = LiteralKind::String { terminated };
-
-        Literal { kind, suffix_start }
     }
 
     fn scan_identifier(&mut self) -> TokenKind {
@@ -293,7 +297,22 @@ impl Tokenizer<'_> {
         self.scan_decimal_digits()
     }
 
-    fn scan_double_quoted_string(&mut self) -> bool {
+    fn scan_double_quoted_string(&mut self) -> TokenKind {
+        let terminated = self.scan_double_quoted_string_literal();
+        let suffix_start = self.cursor.consumed_len();
+
+        if terminated {
+            self.scan_identifier();
+        }
+
+        let kind = LiteralKind::String { terminated };
+        let suffix_start =
+            if self.cursor.consumed_len() > suffix_start { Some(suffix_start) } else { None };
+
+        Literal { kind, suffix_start }
+    }
+
+    fn scan_double_quoted_string_literal(&mut self) -> bool {
         loop {
             if self.cursor.first() == '$' {
                 return false;
@@ -304,7 +323,7 @@ impl Tokenizer<'_> {
                 Some(c) => match c {
                     '"' => {
                         let mode = self.mode_stack.pop();
-                        debug_assert_eq!(Some(TokenizerMode::DoubleQuoteStringPart), mode);
+                        debug_assert_eq!(Some(TokenizerMode::InterpolatedString), mode);
 
                         return true;
                     }
