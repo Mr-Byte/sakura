@@ -25,19 +25,15 @@ impl Tokenizer<'_> {
 
     pub(crate) fn new(input: &str) -> Tokenizer<'_> {
         let cursor = cursor::Cursor::new(input);
-        let mut mode_stack = Vec::with_capacity(Self::DEFAULT_MODE_STACK_CAPACITY);
-        mode_stack.push(TokenizerMode::Default);
+        let mode_stack = Vec::with_capacity(Self::DEFAULT_MODE_STACK_CAPACITY);
 
         Tokenizer { cursor, mode_stack }
     }
 
     pub(crate) fn next_token(&mut self) -> Option<Token> {
         let kind = match self.mode_stack.last() {
-            Some(TokenizerMode::Default) => self.next_token_default()?,
+            None | Some(TokenizerMode::Default) => self.next_token_default()?,
             Some(TokenizerMode::InterpolatedString) => self.next_token_interpolated_string(),
-            None => {
-                unreachable!("ICE: Underflow of the tokenizer mode stack occurred. This is a bug.")
-            }
         };
 
         let token = Token { kind, len: self.cursor.consumed_len() };
@@ -139,12 +135,13 @@ impl Tokenizer<'_> {
             }
             '}' => {
                 let mode = self.mode_stack.pop();
-                debug_assert_eq!(Some(TokenizerMode::Default), mode);
+                debug_assert!(matches!(mode, Some(TokenizerMode::Default) | None));
 
                 CloseBrace
             }
             '[' => OpenBracket,
             ']' => CloseBracket,
+            '@' => At,
             ':' => Colon,
             '$' => Dollar,
             '#' => Hash,

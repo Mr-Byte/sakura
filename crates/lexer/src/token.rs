@@ -28,6 +28,8 @@ pub enum TokenKind {
     OpenBracket,
     /// ]
     CloseBracket,
+    /// @,
+    At,
     /// :
     Colon,
     /// $
