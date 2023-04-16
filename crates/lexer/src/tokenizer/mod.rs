@@ -1,10 +1,10 @@
-use crate::cursor::Cursor;
 use crate::token::Base;
 use crate::token::LiteralKind;
 use crate::token::Token;
 use crate::token::TokenKind;
 use crate::token::TokenKind::*;
 
+mod cursor;
 mod symbol;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -14,7 +14,7 @@ enum TokenizerMode {
 }
 
 pub(crate) struct Tokenizer<'a> {
-    cursor: Cursor<'a>,
+    cursor: cursor::Cursor<'a>,
     mode_stack: Vec<TokenizerMode>,
 }
 
@@ -24,7 +24,7 @@ impl Tokenizer<'_> {
     const DEFAULT_MODE_STACK_CAPACITY: usize = 4;
 
     pub(crate) fn new(input: &str) -> Tokenizer<'_> {
-        let cursor = Cursor::new(input);
+        let cursor = cursor::Cursor::new(input);
         let mut mode_stack = Vec::with_capacity(Self::DEFAULT_MODE_STACK_CAPACITY);
         mode_stack.push(TokenizerMode::Default);
 

@@ -13,10 +13,12 @@ impl Cursor<'_> {
         Cursor { initial_len: input.len(), chars: input.chars() }
     }
 
+    #[inline]
     pub fn bump(&mut self) -> Option<char> {
         self.chars.next()
     }
 
+    #[inline]
     pub fn bump_while(&mut self, predicate: impl Fn(char) -> bool) -> bool {
         let mut consumed_input = false;
 
@@ -28,22 +30,27 @@ impl Cursor<'_> {
         consumed_input
     }
 
+    #[inline]
     pub fn first(&self) -> char {
         self.chars.clone().next().unwrap_or(EOF)
     }
 
+    #[inline]
     pub fn second(&self) -> char {
         self.chars.clone().nth(1).unwrap_or(EOF)
     }
 
+    #[inline]
     pub fn is_eof(&self) -> bool {
         self.chars.as_str().is_empty()
     }
 
+    #[inline]
     pub fn consumed_len(&self) -> usize {
         self.initial_len - self.chars.as_str().len()
     }
 
+    #[inline]
     pub fn reset_len(&mut self) {
         self.initial_len = self.chars.as_str().len()
     }

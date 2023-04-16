@@ -1,7 +1,6 @@
 use token::Token;
 use tokenizer::Tokenizer;
 
-mod cursor;
 mod token;
 mod tokenizer;
 
