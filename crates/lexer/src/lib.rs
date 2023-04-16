@@ -13,12 +13,35 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::token::{LiteralKind, TokenKind};
 
-    use super::*;
+    #[test]
+    fn tokenizes_interpolated_string_with_identifier() {
+        let input = r#""$test""#;
+        let tokens = tokenize(input).collect::<Vec<_>>();
+
+        assert_eq!(4, tokens.len());
+        assert_eq!(
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: false },
+                suffix_start: None
+            },
+            tokens[0].kind
+        );
+        assert_eq!(TokenKind::Dollar, tokens[1].kind);
+        assert_eq!(TokenKind::Identifier, tokens[2].kind);
+        assert_eq!(
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: true },
+                suffix_start: None
+            },
+            tokens[3].kind
+        );
+    }
 
     #[test]
-    fn tokenizes_interpolated_string() {
+    fn tokenizes_interpolated_string_with_expression() {
         let input = r#""${test}""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
 

@@ -146,6 +146,7 @@ impl Tokenizer<'_> {
 
                 return TokenKind::OpenBrace;
             }
+            c if is_identifier_start(c) => self.scan_identifier(),
             _ => self.scan_double_quoted_string(),
         }
     }
