@@ -106,13 +106,13 @@ impl Tokenizer<'_> {
             '$' => {
                 self.cursor.bump();
 
-                return TokenKind::Dollar;
+                TokenKind::Dollar
             }
             '{' => {
                 self.cursor.bump();
                 self.mode_stack.push(TokenizerMode::Default);
 
-                return TokenKind::OpenBrace;
+                TokenKind::OpenBrace
             }
             c if symbol::is_identifier_start(c) => self.scan_identifier(),
             _ => self.scan_double_quoted_string(),

@@ -1,5 +1,6 @@
 use std::{
     env,
+    io::Error,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -7,7 +8,7 @@ use std::{
 fn main() {
     if !Path::new("binaryen/.git").exists() {
         Command::new("git")
-            .args(&["submodule", "update", "--init"])
+            .args(["submodule", "update", "--init"])
             .status()
             .expect("error updating submodules");
     }
@@ -20,7 +21,7 @@ fn main() {
 
     println!("cargo:rustc-link-search=native={}/build/lib", binaryen_cmake.display());
     println!("cargo:rustc-link-lib=static=binaryen");
-    print_deps(&binaryen_cmake);
+    print_deps(&binaryen_cmake).expect("Failed to print deps.");
 
     if let Some(cpp_stdlib) = get_cpp_stdlib() {
         println!("cargo:rustc-link-lib={}", cpp_stdlib);
@@ -41,9 +42,7 @@ fn get_cpp_stdlib() -> Option<String> {
     std::env::var("TARGET").ok().and_then(|target| {
         if target.contains("msvc") {
             None
-        } else if target.contains("darwin") {
-            Some("c++".to_string())
-        } else if target.contains("freebsd") {
+        } else if target.contains("darwin") || target.contains("freebsd") {
             Some("c++".to_string())
         } else if target.contains("musl") {
             Some("static=stdc++".to_string())
@@ -54,13 +53,15 @@ fn get_cpp_stdlib() -> Option<String> {
 }
 
 // See https://github.com/brson/miri/blob/master/build.rs#L70-L79
-fn print_deps(path: &Path) {
-    for e in path.read_dir().unwrap().filter_map(|e| e.ok()) {
-        let file_type = e.file_type().unwrap();
-        if file_type.is_dir() {
-            print_deps(&e.path());
-        } else {
-            println!("cargo:rerun-if-changed={}", e.path().display());
+fn print_deps(path: &Path) -> Result<(), Error> {
+    for entry in path.read_dir()?.filter_map(Result::ok) {
+        if entry.file_type()?.is_dir() {
+            print_deps(&entry.path())?;
+            continue;
         }
+
+        println!("cargo:rerun-if-changed={}", entry.path().display());
     }
+
+    Ok(())
 }
