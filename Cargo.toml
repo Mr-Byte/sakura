@@ -4,5 +4,6 @@ members = [
     "crates/binaryen",
     "crates/binaryen-sys",
     "crates/parser",
+    "crates/syntax",
     "crates/lexer",
 ]

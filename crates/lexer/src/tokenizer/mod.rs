@@ -156,6 +156,7 @@ impl Tokenizer<'_> {
             '&' => And,
             '|' => Or,
             '^' => Caret,
+            '~' => Tilde,
             '%' => Percent,
             _ => Unknown,
         }

@@ -60,6 +60,8 @@ pub enum TokenKind {
     Or,
     /// ^
     Caret,
+    /// ~
+    Tilde,
     /// %
     Percent,
 
