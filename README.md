@@ -1,3 +1,11 @@
+# About
+Sakura is a language with a hybrid of Rust/Go-like syntax and pulling ideas from Kotlin that's intended to target WebAssembly using the GC proposal.
+
+# License
+Sakura is primarily distributed under the terms of both the MIT license and the Apache License (Version 2.0).
+
+See LICENSE-APACHE and LICENSE-MIT for details.
+
 # Building
 
 ## macOS
@@ -5,6 +13,7 @@
 ```
 brew install cmake llvm
 brew link llvm --force
+cargo build
 ```
 
 ## Windows
@@ -12,12 +21,5 @@ brew link llvm --force
 ```
 winget install cmake
 winget install llvm
+cargo build
 ```
-
-# Goals
-- Pattern matching
-- Type class trait system
-- Generics
-- Control flow capture (like Kotlin)
-- Value based error handling
-- No null pointers

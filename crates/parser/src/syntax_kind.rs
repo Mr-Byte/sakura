@@ -61,7 +61,6 @@ pub enum SyntaxKind {
 }
 
 impl SyntaxKind {
-    // TODO: Implement utility functions for checking syntax kinds.
     #[inline]
     pub fn is_trivia(self) -> bool {
         matches!(self, SyntaxKind::WhiteSpace | SyntaxKind::Comment)

@@ -1,10 +1,9 @@
 mod syntax_error;
-mod syntax_kind;
 mod syntax_node;
 
 use std::{marker::PhantomData, sync::Arc};
 
-// Re-export rowan types.
+pub use parser::SyntaxKind;
 pub use rowan::{
     api::Preorder, Direction, GreenNode, NodeOrToken, SyntaxText, TextRange, TextSize,
     TokenAtOffset, WalkEvent,
@@ -12,10 +11,9 @@ pub use rowan::{
 
 pub use crate::{
     syntax_error::SyntaxError,
-    syntax_kind::SyntaxKind,
     syntax_node::{
         PreorderWithTokens, SakuraLang, SyntaxElement, SyntaxElementChildren, SyntaxNode,
-        SyntaxNodeChildren, SyntaxToken,
+        SyntaxNodeChildren, SyntaxToken, SyntaxTreeBuilder,
     },
 };
 

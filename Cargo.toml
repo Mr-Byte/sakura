@@ -3,7 +3,7 @@ members = [
     "sakurac",
     "crates/binaryen",
     "crates/binaryen-sys",
-    "crates/parser",
     "crates/syntax",
+    "crates/parser",
     "crates/lexer",
 ]
