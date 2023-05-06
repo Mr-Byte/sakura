@@ -123,7 +123,7 @@ impl HeapType {
 }
 
 macro_rules! impl_heap_types {
-    ($($type:ident => $heap_type:ident),*) => {
+    ($($type:ident: $heap_type:ident),*) => {
         impl HeapType {
         $(
             pub fn $type() -> HeapType {
@@ -136,20 +136,20 @@ macro_rules! impl_heap_types {
 }
 
 impl_heap_types! {
-    ext => BinaryenHeapTypeExt,
-    func => BinaryenHeapTypeFunc,
-    any => BinaryenHeapTypeAny,
-    eq => BinaryenHeapTypeEq,
-    i32 => BinaryenHeapTypeI31,
-    heap_struct => BinaryenHeapTypeStruct,
-    array => BinaryenHeapTypeArray,
-    string => BinaryenHeapTypeString,
-    string_view_wtf8 => BinaryenHeapTypeStringviewWTF8,
-    string_view_wtf16 => BinaryenHeapTypeStringviewWTF16,
-    string_view_iter => BinaryenHeapTypeStringviewIter,
-    none => BinaryenHeapTypeNone,
-    no_ext => BinaryenHeapTypeNoext,
-    no_func => BinaryenHeapTypeNofunc
+    ext: BinaryenHeapTypeExt,
+    func: BinaryenHeapTypeFunc,
+    any: BinaryenHeapTypeAny,
+    eq: BinaryenHeapTypeEq,
+    i32: BinaryenHeapTypeI31,
+    heap_struct: BinaryenHeapTypeStruct,
+    array: BinaryenHeapTypeArray,
+    string: BinaryenHeapTypeString,
+    string_view_wtf8: BinaryenHeapTypeStringviewWTF8,
+    string_view_wtf16: BinaryenHeapTypeStringviewWTF16,
+    string_view_iter: BinaryenHeapTypeStringviewIter,
+    none: BinaryenHeapTypeNone,
+    no_ext: BinaryenHeapTypeNoext,
+    no_func: BinaryenHeapTypeNofunc
 }
 
 #[cfg(test)]
