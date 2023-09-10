@@ -1,0 +1,14 @@
+Name =
+    'ident'
+
+SourceFile =
+    Definition*
+
+Definition =
+    TypeDefinition
+
+TypeDefinition =
+    'type' Name '=' StructDefinition
+
+StructDefinition =
+    'struct' '{' '}'

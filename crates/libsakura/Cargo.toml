@@ -7,5 +7,4 @@ edition = "2021"
 
 [dependencies]
 rowan = "0.15.11"
-
-parser = { path = "../parser" }
+unicode-xid = "0.2.4"
