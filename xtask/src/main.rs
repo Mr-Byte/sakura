@@ -1,8 +1,8 @@
 mod codegen;
 mod workspace;
 
-use anyhow::Result;
 use clap::{Parser, Subcommand};
+use miette::Result;
 
 fn main() -> Result<()> {
     let app = Xtask::parse();
@@ -10,7 +10,7 @@ fn main() -> Result<()> {
 }
 
 #[derive(Debug, Parser)]
-#[clap(name = "xtask", about = "apollo-rs development workflows")]
+#[clap(name = "xtask")]
 struct Xtask {
     #[clap(subcommand)]
     pub command: Command,

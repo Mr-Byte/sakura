@@ -1,4 +1,4 @@
-pub(crate) struct KindsSource<'a> {
+pub(crate) struct SyntaxKindsSrc<'a> {
     pub(crate) punctuation: &'a [(&'a str, &'a str)],
     pub(crate) keywords: &'a [&'a str],
     pub(crate) literals: &'a [&'a str],
@@ -6,7 +6,7 @@ pub(crate) struct KindsSource<'a> {
     pub(crate) nodes: &'a [&'a str],
 }
 
-pub(crate) const KINDS_SOURCE: KindsSource<'static> = KindsSource {
+pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
     punctuation: &[
         ("(", "LEFT_PAREN"),
         (")", "RIGHT_PAREN"),
@@ -67,5 +67,15 @@ pub(crate) const KINDS_SOURCE: KindsSource<'static> = KindsSource {
         "STRING_LITERAL_FRAGMENT",
     ],
     tokens: &["IDENTIFIER", "WHITESPACE", "ERROR", "LINE_COMMENT", "BLOCK_COMMENT"],
-    nodes: &[],
+    nodes: &[
+        "SOURCE_FILE",
+        "NAME",
+        "ITEM",
+        "TYPE_DEFINITION",
+        "STRUCT_TYPE",
+        "TRAIT_TYPE",
+        "ENUM_TYPE",
+        "STRUCT_FIELD",
+        "STRUCT_FIELD_DEFINITION_LIST",
+    ],
 };
