@@ -108,7 +108,7 @@ const TOKENS: &[&str] = &[
     "StringLiteralFragment",
     "IntLiteral",
     "FloatLiteral",
-    "Ident",
+    "Identifier",
 ];
 
 pub(crate) fn lower(grammar: Grammar) -> GrammarSrc {

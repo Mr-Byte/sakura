@@ -1,14 +1,32 @@
 Name =
-    'ident'
+    'identifier'
 
 SourceFile =
-    Definition*
+    Item*
 
-Definition =
+Item =
     TypeDefinition
 
 TypeDefinition =
-    'type' Name '=' StructDefinition
+    'type' Name '=' body:Type
+    
+Type = 
+      Name
+    | StructType
+    | EnumType
+    | TraitType
 
-StructDefinition =
-    'struct' '{' '}'
+StructType =
+    'struct' StructFieldDefinitionList
+
+StructFieldDefinitionList =
+ '{' fields:(StructField (',' StructField)* ','?)? '}'
+
+StructField =
+    Name ':' Type
+
+EnumType =
+    'enum' '{' '}'
+
+TraitType =
+    'trait' '{' '}'

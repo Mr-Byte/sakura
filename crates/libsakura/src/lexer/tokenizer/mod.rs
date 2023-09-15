@@ -1,4 +1,4 @@
-use crate::syntax::kinds::SyntaxKind;
+use crate::syntax::SyntaxKind;
 
 use super::token::Token;
 

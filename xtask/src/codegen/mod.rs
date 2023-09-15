@@ -51,7 +51,7 @@ fn generate_syntax_tokens(
     root_path: &std::path::PathBuf,
     grammar: &GrammarSrc,
 ) -> miette::Result<()> {
-    let src = generators::syntax_tokens::generate(SYNTAX_KINDS_SRC, grammar)?;
+    let src = generators::syntax_tokens::generate(grammar)?;
     let path = root_path.join("crates/libsakura/src/syntax/ast/generated_tokens.rs");
 
     workspace::ensure_file_contents(&path, &src)

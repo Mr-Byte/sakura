@@ -2,7 +2,7 @@ use miette::{self, Diagnostic};
 use thiserror::Error;
 
 #[derive(Debug, Error, Diagnostic)]
-#[error("codegen")]
+#[error("codegen encountered one or more errors")]
 pub(crate) struct CodegenError {
     #[related]
     pub(crate) others: Vec<miette::Error>,

@@ -73,7 +73,7 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>) -> Result<String> {
         macro_rules! T {
             #([#punctuation_values] => { $crate::syntax::SyntaxKind::#punctuation };)*
             #([#keyword_values] => { $crate::syntax::SyntaxKind::#keywords };)*
-            ["ident"] => { $crate::syntax::SyntaxKind::IDENTIFIER };
+            ["identifier"] => { $crate::syntax::SyntaxKind::IDENTIFIER };
         }
     };
 

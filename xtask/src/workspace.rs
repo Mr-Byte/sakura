@@ -34,7 +34,7 @@ pub(crate) fn ensure_file_contents(file: &Path, contents: &str) -> Result<()> {
 
     fs::write(file, contents).into_diagnostic()?;
 
-    bail!("A code generated file has been updated, please re-run `cargo test`");
+    bail!("{} has been updated, please re-run `cargo test`", file.display());
 }
 
 fn normalize_newlines(s: &str) -> String {

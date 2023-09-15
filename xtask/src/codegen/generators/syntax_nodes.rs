@@ -7,7 +7,39 @@ use std::collections::HashSet;
 use super::fmt::format_src;
 
 pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>, grammar: &GrammarSrc) -> Result<String> {
-    let nodes = grammar.nodes.iter().map(|node| {
+    let nodes = get_nodes(grammar);
+    let enums = get_enums(grammar);
+
+    let node_names = grammar.nodes.iter().map(|it| &it.name);
+    let defined_nodes: HashSet<_> = node_names.collect();
+
+    for node in kinds
+        .nodes
+        .iter()
+        .map(|kind| kind.to_case(Case::Pascal))
+        .filter(|name| !defined_nodes.iter().any(|&it| it == name))
+    {
+        eprintln!("Warning: node {} not defined in ast source", node);
+
+        drop(node);
+    }
+
+    let ast = quote! {
+        use crate::T;
+        use crate::syntax::{SyntaxNode, SyntaxToken, AstNode, AstChildren, SyntaxKind::{self, *}};
+        use super::support;
+
+        #(#nodes)*
+        #(#enums)*
+    };
+
+    format_src(&ast.to_string())
+}
+
+fn get_nodes(
+    grammar: &GrammarSrc,
+) -> impl std::iter::Iterator<Item = proc_macro2::TokenStream> + '_ {
+    grammar.nodes.iter().map(|node| {
         let name = format_ident!("{}", node.name);
         let kind = format_ident!("{}", &node.name.to_case(Case::UpperSnake));
         let traits = node.traits.iter().map(|trait_name| {
@@ -64,9 +96,13 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>, grammar: &GrammarSrc) -> Resul
                 fn syntax(&self) -> &SyntaxNode { &self.syntax }
             }
         }
-    });
+    })
+}
 
-    let enums = grammar.enums.iter().map(|en| {
+fn get_enums(
+    grammar: &GrammarSrc,
+) -> impl std::iter::Iterator<Item = proc_macro2::TokenStream> + '_ {
+    grammar.enums.iter().map(|en| {
         let variants: Vec<_> = en.variants.iter().map(|var| format_ident!("{}", var)).collect();
         let name = format_ident!("{}", en.name);
         let kinds: Vec<_> = variants
@@ -119,30 +155,5 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>, grammar: &GrammarSrc) -> Resul
             )*
             #ast_node
         }
-    });
-
-    let node_names = grammar.nodes.iter().map(|it| &it.name);
-    let defined_nodes: HashSet<_> = node_names.collect();
-
-    for node in kinds
-        .nodes
-        .iter()
-        .map(|kind| kind.to_case(Case::Pascal))
-        .filter(|name| !defined_nodes.iter().any(|&it| it == name))
-    {
-        eprintln!("Warning: node {} not defined in ast source", node);
-
-        drop(node);
-    }
-
-    let ast = quote! {
-        use crate::T;
-        use crate::syntax::{SyntaxNode, SyntaxToken, AstNode, AstChildren, SyntaxKind::{self, *}};
-        use super::support;
-
-        #(#nodes)*
-        #(#enums)*
-    };
-
-    format_src(&ast.to_string())
+    })
 }

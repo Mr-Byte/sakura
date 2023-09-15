@@ -1,4 +1,4 @@
-use crate::syntax::kinds::SyntaxKind;
+use crate::syntax::SyntaxKind;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Token {

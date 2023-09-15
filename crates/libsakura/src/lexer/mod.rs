@@ -16,7 +16,7 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
 
 #[cfg(test)]
 mod test {
-    use crate::syntax::kinds::SyntaxKind;
+    use crate::syntax::SyntaxKind;
 
     use super::*;
     use std::collections::HashMap;
