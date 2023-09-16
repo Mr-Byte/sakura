@@ -26,7 +26,8 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>, grammar: &GrammarSrc) -> Resul
 
     let ast = quote! {
         use crate::T;
-        use crate::syntax::{SyntaxNode, SyntaxToken, AstNode, AstChildren, SyntaxKind::{self, *}};
+        use crate::syntax::{SyntaxNode, SyntaxToken, SyntaxKind::{self, *}};
+        use crate::syntax::ast::{AstNode, AstChildren};
         use super::support;
 
         #(#nodes)*

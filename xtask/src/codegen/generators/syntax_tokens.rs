@@ -32,7 +32,8 @@ pub(crate) fn generate(grammar: &GrammarSrc) -> miette::Result<String> {
     });
 
     let ast = quote! {
-        use crate::syntax::{SyntaxToken, AstToken, SyntaxKind::{self, *}};
+        use crate::syntax::{SyntaxToken, SyntaxKind::{self, *}};
+        use crate::syntax::ast::AstToken;
 
         #(#tokens)*
     };

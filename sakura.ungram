@@ -1,6 +1,3 @@
-Name =
-    'identifier'
-
 SourceFile =
     Item*
 
@@ -16,17 +13,53 @@ Type =
     | EnumType
     | TraitType
 
+// TODO: Restrict type list to named types and struct types.
+TypeList =
+    types:(Type (',' Type)* ','?)?
+
 StructType =
     'struct' StructFieldDefinitionList
 
 StructFieldDefinitionList =
- '{' fields:(StructField (',' StructField)* ','?)? '}'
+    '{' 
+        fields:(StructField (',' StructField)* ','?)?
+    '}'
 
 StructField =
     Name ':' Type
 
 EnumType =
-    'enum' '{' '}'
+    'enum' EnumVariantList
+
+EnumVariantList =
+    '{'
+        variants:(EnumVariant (',' EnumVariant)* ','?)?
+    '}'
+
+EnumVariant =
+    Name EnumVariantBody?
+
+EnumVariantBody =
+      EnumVariantBodyTypeList
+    | EnumVariantBodyLiteral
+
+EnumVariantBodyTypeList = 
+    '(' TypeList ')'
+
+EnumVariantBodyLiteral =
+    '=' Literal
 
 TraitType =
     'trait' '{' '}'
+
+Name =
+    'identifier'
+
+Literal =
+    value:('int_literal'
+        | 'float_literal'
+        | 'string_literal'
+        | 'char_literal'
+        | 'byte_literal'
+        | 'true_literal'
+        | 'false_literal')

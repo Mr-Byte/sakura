@@ -71,11 +71,13 @@ pub enum SyntaxKind {
     LET_KW,
     MUT_KW,
     FN_KW,
-    STRING_LITERAL,
     INT_LITERAL,
     FLOAT_LITERAL,
     CHAR_LITERAL,
     BYTE_LITERAL,
+    TRUE_LITERAL,
+    FALSE_LITERAL,
+    STRING_LITERAL,
     STRING_LITERAL_FRAGMENT,
     IDENTIFIER,
     WHITESPACE,
@@ -84,11 +86,18 @@ pub enum SyntaxKind {
     BLOCK_COMMENT,
     SOURCE_FILE,
     NAME,
+    LITERAL,
     ITEM,
     TYPE_DEFINITION,
+    TYPE_LIST,
     STRUCT_TYPE,
     TRAIT_TYPE,
     ENUM_TYPE,
+    ENUM_VARIANT,
+    ENUM_VARIANT_BODY,
+    ENUM_VARIANT_BODY_TYPE_LIST,
+    ENUM_VARIANT_BODY_LITERAL,
+    ENUM_VARIANT_LIST,
     STRUCT_FIELD,
     STRUCT_FIELD_DEFINITION_LIST,
     #[doc(hidden)]
@@ -155,11 +164,13 @@ impl SyntaxKind {
     pub fn is_literal(self) -> bool {
         matches!(
             self,
-            STRING_LITERAL
-                | INT_LITERAL
+            INT_LITERAL
                 | FLOAT_LITERAL
                 | CHAR_LITERAL
                 | BYTE_LITERAL
+                | TRUE_LITERAL
+                | FALSE_LITERAL
+                | STRING_LITERAL
                 | STRING_LITERAL_FRAGMENT
         )
     }
