@@ -508,15 +508,7 @@ pub struct InterpolatedString {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl InterpolatedString {
-    pub fn parts(&self) -> AstChildren<InterpolatedStringParts> {
-        support::children(&self.syntax)
-    }
-
-    pub fn interpolated_string_parts(&self) -> Option<InterpolatedStringParts> {
-        support::child(&self.syntax)
-    }
-}
+impl InterpolatedString {}
 
 impl AstNode for InterpolatedString {
     fn can_cast(kind: SyntaxKind) -> bool {
@@ -562,15 +554,15 @@ impl AstNode for Literal {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StringLiteral {
+pub struct InterpolatedStringParts {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl StringLiteral {}
+impl InterpolatedStringParts {}
 
-impl AstNode for StringLiteral {
+impl AstNode for InterpolatedStringParts {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == STRING_LITERAL
+        kind == INTERPOLATED_STRING_PARTS
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -777,49 +769,6 @@ impl AstNode for Expr {
             Expr::BinaryExpr(it) => it.syntax(),
             Expr::InterpolatedString(it) => it.syntax(),
             Expr::Literal(it) => it.syntax(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum InterpolatedStringParts {
-    StringLiteral(StringLiteral),
-    InterpolatedStringSlot(InterpolatedStringSlot),
-}
-
-impl From<StringLiteral> for InterpolatedStringParts {
-    fn from(node: StringLiteral) -> InterpolatedStringParts {
-        InterpolatedStringParts::StringLiteral(node)
-    }
-}
-
-impl From<InterpolatedStringSlot> for InterpolatedStringParts {
-    fn from(node: InterpolatedStringSlot) -> InterpolatedStringParts {
-        InterpolatedStringParts::InterpolatedStringSlot(node)
-    }
-}
-
-impl AstNode for InterpolatedStringParts {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        matches!(kind, STRING_LITERAL | INTERPOLATED_STRING_SLOT)
-    }
-
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        let res = match syntax.kind() {
-            STRING_LITERAL => InterpolatedStringParts::StringLiteral(StringLiteral { syntax }),
-            INTERPOLATED_STRING_SLOT => {
-                InterpolatedStringParts::InterpolatedStringSlot(InterpolatedStringSlot { syntax })
-            }
-            _ => return None,
-        };
-
-        Some(res)
-    }
-
-    fn syntax(&self) -> &SyntaxNode {
-        match self {
-            InterpolatedStringParts::StringLiteral(it) => it.syntax(),
-            InterpolatedStringParts::InterpolatedStringSlot(it) => it.syntax(),
         }
     }
 }

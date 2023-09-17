@@ -67,20 +67,16 @@ BinaryExpr =
     rhs:Expr
 
 InterpolatedString =
-    start:StringLiteral parts:InterpolatedStringParts* end:StringLiteral
+    start:'string' parts:InterpolatedStringParts* end:'string'
 
 InterpolatedStringParts =
-    (StringLiteral | InterpolatedStringSlot)
+    value:('string' | InterpolatedStringSlot)
 
 InterpolatedStringSlot =
     '$' '{' Expr '}'
 
 Name =
     'identifier'
-
-// TODO: Add better code gen support for manually implemented enums.
-StringLiteral =
-    value:'string'
 
 Literal =
     value:(

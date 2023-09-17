@@ -87,6 +87,7 @@ pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
         "STRUCT_FIELD_DEFINITION_LIST",
         "BINARY_EXPR",
         "INTERPOLATED_STRING",
+        "INTERPOLATED_STRING_PARTS",
         "INTERPOLATED_STRING_SLOT",
     ],
 };

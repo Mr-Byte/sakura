@@ -199,7 +199,8 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
         Rule::Labeled { label: l, rule } => {
             assert!(label.is_none());
 
-            let manually_implemented = matches!(l.as_str(), "value" | "lhs" | "rhs" | "op");
+            let manually_implemented =
+                matches!(l.as_str(), "value" | "lhs" | "rhs" | "op" | "start" | "end" | "parts");
 
             if manually_implemented {
                 return;
