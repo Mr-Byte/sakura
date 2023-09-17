@@ -13,12 +13,11 @@ Type =
     | EnumType
     | TraitType
 
-// TODO: Restrict type list to named types and struct types.
 TypeList =
     types:(Type (',' Type)* ','?)?
 
 StructType =
-    'struct' StructFieldDefinitionList
+    'struct' body:StructFieldDefinitionList
 
 StructFieldDefinitionList =
     '{' 
@@ -37,29 +36,55 @@ EnumVariantList =
     '}'
 
 EnumVariant =
-    Name EnumVariantBody?
+    Name body:EnumVariantBody?
 
 EnumVariantBody =
       EnumVariantBodyTypeList
-    | EnumVariantBodyLiteral
+    | EnumVariantBodyExpr
 
 EnumVariantBodyTypeList = 
     '(' TypeList ')'
 
-EnumVariantBodyLiteral =
-    '=' Literal
+EnumVariantBodyExpr =
+    '=' value:Expr
 
 TraitType =
     'trait' '{' '}'
 
+Expr =
+      BinaryExpr
+    | InterpolatedString
+    | Literal
+
+BinaryExpr =
+    lhs:Expr
+    op:(
+        '||' | '&&'
+        | '==' | '!=' | '<=' | '>=' | '<' | '>'
+        | '+' | '*' | '-' | '/' | '%' | '<<' | '>>' | '^' | '|' | '&'
+        | '=' | '+=' | '/=' | '*=' | '%=' | '>>=' | '<<=' | '-=' | '|=' | '&=' | '^='
+    )
+    rhs:Expr
+
+InterpolatedString =
+    start:StringLiteral parts:InterpolatedStringParts* end:StringLiteral
+
+InterpolatedStringParts =
+    (StringLiteral | InterpolatedStringSlot)
+
+InterpolatedStringSlot =
+    '$' '{' Expr '}'
+
 Name =
     'identifier'
 
+// TODO: Add better code gen support for manually implemented enums.
+StringLiteral =
+    value:'string'
+
 Literal =
-    value:('int_literal'
-        | 'float_literal'
-        | 'string_literal'
-        | 'char_literal'
-        | 'byte_literal'
-        | 'true_literal'
-        | 'false_literal')
+    value:(
+        'int' | 'float'
+        | 'string' | 'char' | 'byte'
+        | 'true' | 'false'
+    )

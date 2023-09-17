@@ -109,6 +109,7 @@ const TOKENS: &[&str] = &[
     "IntLiteral",
     "FloatLiteral",
     "Identifier",
+    // TODO: Extend this
 ];
 
 pub(crate) fn lower(grammar: Grammar) -> GrammarSrc {
@@ -149,6 +150,8 @@ fn lower_enum(grammar: &Grammar, rule: &Rule) -> Option<Vec<String>> {
     let mut variants = Vec::new();
 
     for alternative in alternatives {
+        // TODO: Handle all-nodes or all-tokens enums
+
         let Rule::Node(node) = alternative else {
             return None;
         };
@@ -196,7 +199,7 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
         Rule::Labeled { label: l, rule } => {
             assert!(label.is_none());
 
-            let manually_implemented = matches!(l.as_str(), "value");
+            let manually_implemented = matches!(l.as_str(), "value" | "lhs" | "rhs" | "op");
 
             if manually_implemented {
                 return;

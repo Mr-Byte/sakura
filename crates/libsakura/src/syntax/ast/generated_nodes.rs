@@ -146,7 +146,7 @@ impl StructType {
         support::token(&self.syntax, T!["struct"])
     }
 
-    pub fn struct_field_definition_list(&self) -> Option<StructFieldDefinitionList> {
+    pub fn body(&self) -> Option<StructFieldDefinitionList> {
         support::child(&self.syntax)
     }
 }
@@ -389,7 +389,7 @@ impl EnumVariant {
         support::child(&self.syntax)
     }
 
-    pub fn enum_variant_body(&self) -> Option<EnumVariantBody> {
+    pub fn body(&self) -> Option<EnumVariantBody> {
         support::child(&self.syntax)
     }
 }
@@ -450,23 +450,77 @@ impl AstNode for EnumVariantBodyTypeList {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EnumVariantBodyLiteral {
+pub struct EnumVariantBodyExpr {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl EnumVariantBodyLiteral {
+impl EnumVariantBodyExpr {
     pub fn equal_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!["="])
     }
+}
 
-    pub fn literal(&self) -> Option<Literal> {
+impl AstNode for EnumVariantBodyExpr {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == ENUM_VARIANT_BODY_EXPR
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BinaryExpr {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl BinaryExpr {}
+
+impl AstNode for BinaryExpr {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == BINARY_EXPR
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct InterpolatedString {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl InterpolatedString {
+    pub fn parts(&self) -> AstChildren<InterpolatedStringParts> {
+        support::children(&self.syntax)
+    }
+
+    pub fn interpolated_string_parts(&self) -> Option<InterpolatedStringParts> {
         support::child(&self.syntax)
     }
 }
 
-impl AstNode for EnumVariantBodyLiteral {
+impl AstNode for InterpolatedString {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == ENUM_VARIANT_BODY_LITERAL
+        kind == INTERPOLATED_STRING
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -492,6 +546,72 @@ impl Literal {}
 impl AstNode for Literal {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == LITERAL
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct StringLiteral {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl StringLiteral {}
+
+impl AstNode for StringLiteral {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == STRING_LITERAL
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct InterpolatedStringSlot {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl InterpolatedStringSlot {
+    pub fn dollar_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["$"])
+    }
+
+    pub fn left_curly_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["{"])
+    }
+
+    pub fn expr(&self) -> Option<Expr> {
+        support::child(&self.syntax)
+    }
+
+    pub fn right_curly_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["}"])
+    }
+}
+
+impl AstNode for InterpolatedStringSlot {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == INTERPOLATED_STRING_SLOT
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -569,7 +689,7 @@ impl AstNode for Type {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum EnumVariantBody {
     EnumVariantBodyTypeList(EnumVariantBodyTypeList),
-    EnumVariantBodyLiteral(EnumVariantBodyLiteral),
+    EnumVariantBodyExpr(EnumVariantBodyExpr),
 }
 
 impl From<EnumVariantBodyTypeList> for EnumVariantBody {
@@ -578,15 +698,15 @@ impl From<EnumVariantBodyTypeList> for EnumVariantBody {
     }
 }
 
-impl From<EnumVariantBodyLiteral> for EnumVariantBody {
-    fn from(node: EnumVariantBodyLiteral) -> EnumVariantBody {
-        EnumVariantBody::EnumVariantBodyLiteral(node)
+impl From<EnumVariantBodyExpr> for EnumVariantBody {
+    fn from(node: EnumVariantBodyExpr) -> EnumVariantBody {
+        EnumVariantBody::EnumVariantBodyExpr(node)
     }
 }
 
 impl AstNode for EnumVariantBody {
     fn can_cast(kind: SyntaxKind) -> bool {
-        matches!(kind, ENUM_VARIANT_BODY_TYPE_LIST | ENUM_VARIANT_BODY_LITERAL)
+        matches!(kind, ENUM_VARIANT_BODY_TYPE_LIST | ENUM_VARIANT_BODY_EXPR)
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -594,8 +714,8 @@ impl AstNode for EnumVariantBody {
             ENUM_VARIANT_BODY_TYPE_LIST => {
                 EnumVariantBody::EnumVariantBodyTypeList(EnumVariantBodyTypeList { syntax })
             }
-            ENUM_VARIANT_BODY_LITERAL => {
-                EnumVariantBody::EnumVariantBodyLiteral(EnumVariantBodyLiteral { syntax })
+            ENUM_VARIANT_BODY_EXPR => {
+                EnumVariantBody::EnumVariantBodyExpr(EnumVariantBodyExpr { syntax })
             }
             _ => return None,
         };
@@ -606,7 +726,100 @@ impl AstNode for EnumVariantBody {
     fn syntax(&self) -> &SyntaxNode {
         match self {
             EnumVariantBody::EnumVariantBodyTypeList(it) => it.syntax(),
-            EnumVariantBody::EnumVariantBodyLiteral(it) => it.syntax(),
+            EnumVariantBody::EnumVariantBodyExpr(it) => it.syntax(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Expr {
+    BinaryExpr(BinaryExpr),
+    InterpolatedString(InterpolatedString),
+    Literal(Literal),
+}
+
+impl From<BinaryExpr> for Expr {
+    fn from(node: BinaryExpr) -> Expr {
+        Expr::BinaryExpr(node)
+    }
+}
+
+impl From<InterpolatedString> for Expr {
+    fn from(node: InterpolatedString) -> Expr {
+        Expr::InterpolatedString(node)
+    }
+}
+
+impl From<Literal> for Expr {
+    fn from(node: Literal) -> Expr {
+        Expr::Literal(node)
+    }
+}
+
+impl AstNode for Expr {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        matches!(kind, BINARY_EXPR | INTERPOLATED_STRING | LITERAL)
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        let res = match syntax.kind() {
+            BINARY_EXPR => Expr::BinaryExpr(BinaryExpr { syntax }),
+            INTERPOLATED_STRING => Expr::InterpolatedString(InterpolatedString { syntax }),
+            LITERAL => Expr::Literal(Literal { syntax }),
+            _ => return None,
+        };
+
+        Some(res)
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Expr::BinaryExpr(it) => it.syntax(),
+            Expr::InterpolatedString(it) => it.syntax(),
+            Expr::Literal(it) => it.syntax(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum InterpolatedStringParts {
+    StringLiteral(StringLiteral),
+    InterpolatedStringSlot(InterpolatedStringSlot),
+}
+
+impl From<StringLiteral> for InterpolatedStringParts {
+    fn from(node: StringLiteral) -> InterpolatedStringParts {
+        InterpolatedStringParts::StringLiteral(node)
+    }
+}
+
+impl From<InterpolatedStringSlot> for InterpolatedStringParts {
+    fn from(node: InterpolatedStringSlot) -> InterpolatedStringParts {
+        InterpolatedStringParts::InterpolatedStringSlot(node)
+    }
+}
+
+impl AstNode for InterpolatedStringParts {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        matches!(kind, STRING_LITERAL | INTERPOLATED_STRING_SLOT)
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        let res = match syntax.kind() {
+            STRING_LITERAL => InterpolatedStringParts::StringLiteral(StringLiteral { syntax }),
+            INTERPOLATED_STRING_SLOT => {
+                InterpolatedStringParts::InterpolatedStringSlot(InterpolatedStringSlot { syntax })
+            }
+            _ => return None,
+        };
+
+        Some(res)
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            InterpolatedStringParts::StringLiteral(it) => it.syntax(),
+            InterpolatedStringParts::InterpolatedStringSlot(it) => it.syntax(),
         }
     }
 }

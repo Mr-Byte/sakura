@@ -1,11 +1,10 @@
-use crate::codegen::model::SyntaxKindsSrc;
+use crate::codegen::{err::CodegenError, model::SyntaxKindsSrc};
 use convert_case::{Case, Casing};
-use miette::Result;
 use quote::{format_ident, quote};
 
 use super::fmt::format_src;
 
-pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>) -> Result<String> {
+pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>) -> Result<String, CodegenError> {
     let (single_char_token_values, single_char_token_names) = get_single_char_tokens(&kinds);
     let (punctuation_values, punctuation) = get_punctuation(&kinds);
     let (keyword_values, keywords) = get_keywords(&kinds);
@@ -77,7 +76,8 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>) -> Result<String> {
         }
     };
 
-    format_src(&ast.to_string())
+    let result = format_src(&ast.to_string())?;
+    Ok(result)
 }
 
 fn get_punctuation<'a>(kinds: &'a SyntaxKindsSrc<'_>) -> (Vec<&'a str>, Vec<proc_macro2::Ident>) {

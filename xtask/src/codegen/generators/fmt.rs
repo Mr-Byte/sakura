@@ -1,21 +1,20 @@
-use miette::{bail, IntoDiagnostic, Result};
+use anyhow::bail;
 use xshell::{cmd, Shell};
 
-pub(crate) fn format_src(text: &str) -> Result<String> {
+pub(crate) fn format_src(text: &str) -> Result<String, anyhow::Error> {
     ensure_rustfmt()?;
 
-    let shell = Shell::new().into_diagnostic()?;
+    let shell = Shell::new()?;
     let _env = shell.push_env("RUSTUP_TOOLCHAIN", "stable");
 
     let cmd_output = cmd!(shell, "rustfmt --config blank_lines_lower_bound=1")
         .stdin(text)
-        .read()
-        .into_diagnostic()?
+        .read()?
         .replace("]\n", "]")
         .replace(" !", "!");
 
     // NOTE: Run rustfmt a second time to remove extraneous newlines.
-    let cmd_output = cmd!(shell, "rustfmt").stdin(cmd_output).read().into_diagnostic()?;
+    let cmd_output = cmd!(shell, "rustfmt").stdin(cmd_output).read()?;
 
     Ok(format!(
         "{}\n\n{}\n",
@@ -23,10 +22,10 @@ pub(crate) fn format_src(text: &str) -> Result<String> {
     ))
 }
 
-fn ensure_rustfmt() -> Result<()> {
-    let shell = Shell::new().into_diagnostic()?;
+fn ensure_rustfmt() -> Result<(), anyhow::Error> {
+    let shell = Shell::new()?;
 
-    let cmd_output = cmd!(shell, "rustfmt --version").read().into_diagnostic()?;
+    let cmd_output = cmd!(shell, "rustfmt --version").read()?;
     if !cmd_output.contains("stable") {
         bail!(
             "Failed to run rustfmt from toolchain 'stable'. \

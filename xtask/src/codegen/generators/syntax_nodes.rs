@@ -1,12 +1,17 @@
-use crate::codegen::model::{GrammarSrc, SyntaxKindsSrc};
+use crate::codegen::{
+    err::CodegenError,
+    model::{GrammarSrc, SyntaxKindsSrc},
+};
 use convert_case::{Case, Casing};
-use miette::Result;
 use quote::{format_ident, quote};
 use std::collections::HashSet;
 
 use super::fmt::format_src;
 
-pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>, grammar: &GrammarSrc) -> Result<String> {
+pub(crate) fn generate(
+    kinds: SyntaxKindsSrc<'_>,
+    grammar: &GrammarSrc,
+) -> Result<String, CodegenError> {
     let nodes = get_nodes(grammar);
     let enums = get_enums(grammar);
 
@@ -34,7 +39,8 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>, grammar: &GrammarSrc) -> Resul
         #(#enums)*
     };
 
-    format_src(&ast.to_string())
+    let result = format_src(&ast.to_string())?;
+    Ok(result)
 }
 
 fn get_nodes(

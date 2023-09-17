@@ -1,11 +1,11 @@
 use convert_case::{Case, Casing};
 use quote::{format_ident, quote};
 
-use crate::codegen::model::GrammarSrc;
+use crate::codegen::{err::CodegenError, model::GrammarSrc};
 
 use super::fmt::format_src;
 
-pub(crate) fn generate(grammar: &GrammarSrc) -> miette::Result<String> {
+pub(crate) fn generate(grammar: &GrammarSrc) -> anyhow::Result<String, CodegenError> {
     let tokens = grammar.tokens.iter().map(|token| {
         let name = format_ident!("{}", token);
         let kind = format_ident!("{}", token.to_case(Case::UpperSnake));
@@ -38,5 +38,6 @@ pub(crate) fn generate(grammar: &GrammarSrc) -> miette::Result<String> {
         #(#tokens)*
     };
 
-    format_src(&ast.to_string())
+    let result = format_src(&ast.to_string())?;
+    Ok(result)
 }
