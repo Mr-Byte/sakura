@@ -105,9 +105,10 @@ const TOKENS: &[&str] = &[
     "LineComment",
     "BlockComment",
     "StringLiteral",
-    "StringLiteralFragment",
     "IntLiteral",
     "FloatLiteral",
+    "ByteLiteral",
+    "CharLiteral",
     "Identifier",
     // TODO: Extend this
 ];

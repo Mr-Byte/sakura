@@ -728,6 +728,7 @@ pub enum Expr {
     BinaryExpr(BinaryExpr),
     InterpolatedString(InterpolatedString),
     Literal(Literal),
+    Name(Name),
 }
 
 impl From<BinaryExpr> for Expr {
@@ -748,9 +749,15 @@ impl From<Literal> for Expr {
     }
 }
 
+impl From<Name> for Expr {
+    fn from(node: Name) -> Expr {
+        Expr::Name(node)
+    }
+}
+
 impl AstNode for Expr {
     fn can_cast(kind: SyntaxKind) -> bool {
-        matches!(kind, BINARY_EXPR | INTERPOLATED_STRING | LITERAL)
+        matches!(kind, BINARY_EXPR | INTERPOLATED_STRING | LITERAL | NAME)
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -758,6 +765,7 @@ impl AstNode for Expr {
             BINARY_EXPR => Expr::BinaryExpr(BinaryExpr { syntax }),
             INTERPOLATED_STRING => Expr::InterpolatedString(InterpolatedString { syntax }),
             LITERAL => Expr::Literal(Literal { syntax }),
+            NAME => Expr::Name(Name { syntax }),
             _ => return None,
         };
 
@@ -769,6 +777,7 @@ impl AstNode for Expr {
             Expr::BinaryExpr(it) => it.syntax(),
             Expr::InterpolatedString(it) => it.syntax(),
             Expr::Literal(it) => it.syntax(),
+            Expr::Name(it) => it.syntax(),
         }
     }
 }

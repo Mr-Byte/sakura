@@ -123,35 +123,6 @@ impl AstToken for StringLiteral {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StringLiteralFragment {
-    pub(crate) syntax: SyntaxToken,
-}
-
-impl std::fmt::Display for StringLiteralFragment {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.syntax, f)
-    }
-}
-
-impl AstToken for StringLiteralFragment {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == STRING_LITERAL_FRAGMENT
-    }
-
-    fn cast(syntax: SyntaxToken) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-
-    fn syntax(&self) -> &SyntaxToken {
-        &self.syntax
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IntLiteral {
     pub(crate) syntax: SyntaxToken,
 }
@@ -194,6 +165,64 @@ impl std::fmt::Display for FloatLiteral {
 impl AstToken for FloatLiteral {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == FLOAT_LITERAL
+    }
+
+    fn cast(syntax: SyntaxToken) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxToken {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ByteLiteral {
+    pub(crate) syntax: SyntaxToken,
+}
+
+impl std::fmt::Display for ByteLiteral {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.syntax, f)
+    }
+}
+
+impl AstToken for ByteLiteral {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == BYTE_LITERAL
+    }
+
+    fn cast(syntax: SyntaxToken) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxToken {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CharLiteral {
+    pub(crate) syntax: SyntaxToken,
+}
+
+impl std::fmt::Display for CharLiteral {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.syntax, f)
+    }
+}
+
+impl AstToken for CharLiteral {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == CHAR_LITERAL
     }
 
     fn cast(syntax: SyntaxToken) -> Option<Self> {

@@ -55,6 +55,7 @@ Expr =
       BinaryExpr
     | InterpolatedString
     | Literal
+    | Name
 
 BinaryExpr =
     lhs:Expr

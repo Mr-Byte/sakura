@@ -71,12 +71,12 @@ pub enum SyntaxKind {
     LET_KW,
     MUT_KW,
     FN_KW,
+    TRUE_KW,
+    FALSE_KW,
     INT_LITERAL,
     FLOAT_LITERAL,
     CHAR_LITERAL,
     BYTE_LITERAL,
-    TRUE_LITERAL,
-    FALSE_LITERAL,
     STRING_LITERAL,
     STRING_LITERAL_FRAGMENT,
     IDENTIFIER,
@@ -171,15 +171,16 @@ impl SyntaxKind {
                 | FLOAT_LITERAL
                 | CHAR_LITERAL
                 | BYTE_LITERAL
-                | TRUE_LITERAL
-                | FALSE_LITERAL
                 | STRING_LITERAL
                 | STRING_LITERAL_FRAGMENT
         )
     }
 
     pub fn is_keyword(self) -> bool {
-        matches!(self, TYPE_KW | STRUCT_KW | ENUM_KW | TRAIT_KW | LET_KW | MUT_KW | FN_KW)
+        matches!(
+            self,
+            TYPE_KW | STRUCT_KW | ENUM_KW | TRAIT_KW | LET_KW | MUT_KW | FN_KW | TRUE_KW | FALSE_KW
+        )
     }
 
     pub fn from_keyword(ident: &str) -> Option<SyntaxKind> {
@@ -191,6 +192,8 @@ impl SyntaxKind {
             "let" => LET_KW,
             "mut" => MUT_KW,
             "fn" => FN_KW,
+            "true" => TRUE_KW,
+            "false" => FALSE_KW,
             _ => return None,
         };
 
@@ -233,4 +236,4 @@ impl SyntaxKind {
 }
 
 #[macro_export]
-macro_rules! T { ["("] => { $ crate :: syntax :: SyntaxKind :: LEFT_PAREN } ; [")"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_PAREN } ; ["{"] => { $ crate :: syntax :: SyntaxKind :: LEFT_CURLY } ; ["}"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_CURLY } ; ["["] => { $ crate :: syntax :: SyntaxKind :: LEFT_BRACKET } ; ["]"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_BRACKET } ; [","] => { $ crate :: syntax :: SyntaxKind :: COMMA } ; ["."] => { $ crate :: syntax :: SyntaxKind :: DOT } ; [":"] => { $ crate :: syntax :: SyntaxKind :: COLON } ; ["="] => { $ crate :: syntax :: SyntaxKind :: EQUAL } ; ["+"] => { $ crate :: syntax :: SyntaxKind :: PLUS } ; ["-"] => { $ crate :: syntax :: SyntaxKind :: MINUS } ; ["*"] => { $ crate :: syntax :: SyntaxKind :: STAR } ; ["/"] => { $ crate :: syntax :: SyntaxKind :: SLASH } ; ["&"] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND } ; ["|"] => { $ crate :: syntax :: SyntaxKind :: PIPE } ; ["^"] => { $ crate :: syntax :: SyntaxKind :: CARET } ; ["~"] => { $ crate :: syntax :: SyntaxKind :: TILDE } ; ["%"] => { $ crate :: syntax :: SyntaxKind :: PERCENT } ; ["@"] => { $ crate :: syntax :: SyntaxKind :: AT } ; ["#"] => { $ crate :: syntax :: SyntaxKind :: HASH } ; ["!"] => { $ crate :: syntax :: SyntaxKind :: BANG } ; ["?"] => { $ crate :: syntax :: SyntaxKind :: QUESTION } ; ["$"] => { $ crate :: syntax :: SyntaxKind :: DOLLAR } ; ["**"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_STAR } ; [".."] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT } ; ["..="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT_EQUAL } ; ["=="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_EQUAL } ; ["&&"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_AMPERSAND } ; ["||"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_PIPE } ; ["=>"] => { $ crate :: syntax :: SyntaxKind :: FAT_ARROW } ; ["!="] => { $ crate :: syntax :: SyntaxKind :: NOT_EQUAL } ; ["<"] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN } ; [">"] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN } ; ["<="] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN_EQUAL } ; [">="] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN_EQUAL } ; ["+="] => { $ crate :: syntax :: SyntaxKind :: PLUS_EQUAL } ; ["-="] => { $ crate :: syntax :: SyntaxKind :: MINUS_EQUAL } ; ["|="] => { $ crate :: syntax :: SyntaxKind :: PIPE_EQUAL } ; ["&="] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND_EQUAL } ; ["^="] => { $ crate :: syntax :: SyntaxKind :: CARET_EQUAL } ; ["/="] => { $ crate :: syntax :: SyntaxKind :: SLASH_EQUAL } ; ["*="] => { $ crate :: syntax :: SyntaxKind :: STAR_EQUAL } ; ["%="] => { $ crate :: syntax :: SyntaxKind :: PERCENT_EQUAL } ; ["<<"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT } ; [">>"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT } ; ["<<="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT_EQUAL } ; [">>="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT_EQUAL } ; ["type"] => { $ crate :: syntax :: SyntaxKind :: TYPE_KW } ; ["struct"] => { $ crate :: syntax :: SyntaxKind :: STRUCT_KW } ; ["enum"] => { $ crate :: syntax :: SyntaxKind :: ENUM_KW } ; ["trait"] => { $ crate :: syntax :: SyntaxKind :: TRAIT_KW } ; ["let"] => { $ crate :: syntax :: SyntaxKind :: LET_KW } ; ["mut"] => { $ crate :: syntax :: SyntaxKind :: MUT_KW } ; ["fn"] => { $ crate :: syntax :: SyntaxKind :: FN_KW } ; ["identifier"] => { $ crate :: syntax :: SyntaxKind :: IDENTIFIER } ; }
+macro_rules! T { ["("] => { $ crate :: syntax :: SyntaxKind :: LEFT_PAREN } ; [")"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_PAREN } ; ["{"] => { $ crate :: syntax :: SyntaxKind :: LEFT_CURLY } ; ["}"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_CURLY } ; ["["] => { $ crate :: syntax :: SyntaxKind :: LEFT_BRACKET } ; ["]"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_BRACKET } ; [","] => { $ crate :: syntax :: SyntaxKind :: COMMA } ; ["."] => { $ crate :: syntax :: SyntaxKind :: DOT } ; [":"] => { $ crate :: syntax :: SyntaxKind :: COLON } ; ["="] => { $ crate :: syntax :: SyntaxKind :: EQUAL } ; ["+"] => { $ crate :: syntax :: SyntaxKind :: PLUS } ; ["-"] => { $ crate :: syntax :: SyntaxKind :: MINUS } ; ["*"] => { $ crate :: syntax :: SyntaxKind :: STAR } ; ["/"] => { $ crate :: syntax :: SyntaxKind :: SLASH } ; ["&"] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND } ; ["|"] => { $ crate :: syntax :: SyntaxKind :: PIPE } ; ["^"] => { $ crate :: syntax :: SyntaxKind :: CARET } ; ["~"] => { $ crate :: syntax :: SyntaxKind :: TILDE } ; ["%"] => { $ crate :: syntax :: SyntaxKind :: PERCENT } ; ["@"] => { $ crate :: syntax :: SyntaxKind :: AT } ; ["#"] => { $ crate :: syntax :: SyntaxKind :: HASH } ; ["!"] => { $ crate :: syntax :: SyntaxKind :: BANG } ; ["?"] => { $ crate :: syntax :: SyntaxKind :: QUESTION } ; ["$"] => { $ crate :: syntax :: SyntaxKind :: DOLLAR } ; ["**"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_STAR } ; [".."] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT } ; ["..="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT_EQUAL } ; ["=="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_EQUAL } ; ["&&"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_AMPERSAND } ; ["||"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_PIPE } ; ["=>"] => { $ crate :: syntax :: SyntaxKind :: FAT_ARROW } ; ["!="] => { $ crate :: syntax :: SyntaxKind :: NOT_EQUAL } ; ["<"] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN } ; [">"] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN } ; ["<="] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN_EQUAL } ; [">="] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN_EQUAL } ; ["+="] => { $ crate :: syntax :: SyntaxKind :: PLUS_EQUAL } ; ["-="] => { $ crate :: syntax :: SyntaxKind :: MINUS_EQUAL } ; ["|="] => { $ crate :: syntax :: SyntaxKind :: PIPE_EQUAL } ; ["&="] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND_EQUAL } ; ["^="] => { $ crate :: syntax :: SyntaxKind :: CARET_EQUAL } ; ["/="] => { $ crate :: syntax :: SyntaxKind :: SLASH_EQUAL } ; ["*="] => { $ crate :: syntax :: SyntaxKind :: STAR_EQUAL } ; ["%="] => { $ crate :: syntax :: SyntaxKind :: PERCENT_EQUAL } ; ["<<"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT } ; [">>"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT } ; ["<<="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT_EQUAL } ; [">>="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT_EQUAL } ; ["type"] => { $ crate :: syntax :: SyntaxKind :: TYPE_KW } ; ["struct"] => { $ crate :: syntax :: SyntaxKind :: STRUCT_KW } ; ["enum"] => { $ crate :: syntax :: SyntaxKind :: ENUM_KW } ; ["trait"] => { $ crate :: syntax :: SyntaxKind :: TRAIT_KW } ; ["let"] => { $ crate :: syntax :: SyntaxKind :: LET_KW } ; ["mut"] => { $ crate :: syntax :: SyntaxKind :: MUT_KW } ; ["fn"] => { $ crate :: syntax :: SyntaxKind :: FN_KW } ; ["true"] => { $ crate :: syntax :: SyntaxKind :: TRUE_KW } ; ["false"] => { $ crate :: syntax :: SyntaxKind :: FALSE_KW } ; ["identifier"] => { $ crate :: syntax :: SyntaxKind :: IDENTIFIER } ; }
