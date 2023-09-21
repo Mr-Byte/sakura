@@ -1,6 +1,5 @@
-use crate::syntax::SyntaxKind;
-
-use super::token::Token;
+use super::token::{Token, TokenKind::*};
+use crate::lexer::token::{Base, LiteralKind, TokenKind};
 
 mod cursor;
 mod symbol;
@@ -21,7 +20,6 @@ pub(crate) struct Tokenizer<'a> {
 impl Tokenizer<'_> {
     const DEFAULT_MODE_STACK_CAPACITY: usize = 4;
 
-    /// Create a new tokenizer from the given input string.
     pub(crate) fn new(input: &str) -> Tokenizer<'_> {
         let cursor = cursor::Cursor::new(input);
         let mode_stack = Vec::with_capacity(Self::DEFAULT_MODE_STACK_CAPACITY);
@@ -29,9 +27,6 @@ impl Tokenizer<'_> {
         Tokenizer { cursor, mode_stack }
     }
 
-    /// Get the next available token from the input.
-    /// If the end of the input has been reached, `None` is returned.
-    /// If an error occurs, the `ERROR` token is returned.
     pub(crate) fn next_token(&mut self) -> Option<Token> {
         let kind = match self.mode_stack.last() {
             None | Some(TokenizerMode::Default) => self.next_token_default()?,
@@ -45,21 +40,34 @@ impl Tokenizer<'_> {
     }
 
     /// Scan tokens that constitute the primary portion of the language as represented by the `Default` state.
-    fn next_token_default(&mut self) -> Option<SyntaxKind> {
+    fn next_token_default(&mut self) -> Option<TokenKind> {
         let next_char = self.cursor.bump()?;
         let kind = match next_char {
             // Comments
             '/' => match self.cursor.first() {
                 '/' => self.scan_line_comment(),
                 '*' => self.scan_block_comment(),
-                _ => SyntaxKind::SLASH,
+                _ => Slash,
             },
             // Whitespace
             c if char::is_whitespace(c) => self.scan_whitespace(),
             // Identifiers
             c if symbol::is_identifier_start(c) => self.scan_identifier(),
             // Numbers
-            c @ '0'..='9' => self.scan_number(c),
+            c @ '0'..='9' => {
+                let literal_kind = self.scan_number(c);
+                let suffix_start = self.cursor.consumed_len();
+                // NOTE: Lex any trailing idenfitiers as a suffix
+                self.scan_identifier();
+
+                let suffix_start = if self.cursor.consumed_len() > suffix_start {
+                    Some(suffix_start)
+                } else {
+                    None
+                };
+
+                TokenKind::Literal { kind: literal_kind, suffix_start }
+            }
             // Strings
             '"' => {
                 self.mode_stack.push(TokenizerMode::InterpolatedString);
@@ -67,12 +75,20 @@ impl Tokenizer<'_> {
             }
             '\'' => {
                 let terminated = self.scan_single_quoted_string();
+                let suffix_start = self.cursor.consumed_len();
 
                 if terminated {
                     self.scan_identifier();
                 }
 
-                SyntaxKind::CHAR_LITERAL
+                let kind = LiteralKind::Char { terminated };
+                let suffix_start = if self.cursor.consumed_len() > suffix_start {
+                    Some(suffix_start)
+                } else {
+                    None
+                };
+
+                Literal { kind, suffix_start }
             }
             // Symbols
             c => self.scan_symbol(c),
@@ -82,18 +98,18 @@ impl Tokenizer<'_> {
     }
 
     /// Scan tokens that are part of interpolated strings as represented by the `InterpolatedString` state.
-    fn next_token_interpolated_string(&mut self) -> SyntaxKind {
+    fn next_token_interpolated_string(&mut self) -> TokenKind {
         match self.cursor.first() {
             '$' => {
                 self.cursor.bump();
 
-                SyntaxKind::DOLLAR
+                TokenKind::Dollar
             }
             '{' => {
                 self.cursor.bump();
                 self.mode_stack.push(TokenizerMode::Default);
 
-                SyntaxKind::LEFT_CURLY
+                TokenKind::OpenBrace
             }
             c if symbol::is_identifier_start(c) => self.scan_identifier(),
             _ => self.scan_double_quoted_string(),
@@ -103,62 +119,62 @@ impl Tokenizer<'_> {
 
 /// Implement complex scanners for various tokens.
 impl Tokenizer<'_> {
-    fn scan_symbol(&mut self, c: char) -> SyntaxKind {
+    fn scan_symbol(&mut self, c: char) -> TokenKind {
         match c {
             // Symbol tokens
-            ',' => SyntaxKind::COMMA,
-            '.' => SyntaxKind::DOT,
-            '(' => SyntaxKind::LEFT_PAREN,
-            ')' => SyntaxKind::RIGHT_PAREN,
+            ',' => Comma,
+            '.' => Dot,
+            '(' => OpenParen,
+            ')' => CloseParen,
             '{' => {
                 self.mode_stack.push(TokenizerMode::Default);
-                SyntaxKind::LEFT_CURLY
+                OpenBrace
             }
             '}' => {
                 let mode = self.mode_stack.pop();
                 debug_assert!(matches!(mode, Some(TokenizerMode::Default) | None));
 
-                SyntaxKind::RIGHT_CURLY
+                CloseBrace
             }
-            '[' => SyntaxKind::LEFT_BRACKET,
-            ']' => SyntaxKind::RIGHT_BRACKET,
-            '@' => SyntaxKind::AT,
-            ':' => SyntaxKind::COLON,
-            '$' => SyntaxKind::DOLLAR,
-            '#' => SyntaxKind::HASH,
-            '!' => SyntaxKind::BANG,
-            '?' => SyntaxKind::QUESTION,
-            '=' => SyntaxKind::EQUAL,
-            '<' => SyntaxKind::LESS_THAN,
-            '>' => SyntaxKind::GREATER_THAN,
-            '+' => SyntaxKind::PLUS,
-            '-' => SyntaxKind::MINUS,
-            '*' => SyntaxKind::STAR,
-            '&' => SyntaxKind::AMPERSAND,
-            '|' => SyntaxKind::PIPE,
-            '^' => SyntaxKind::CARET,
-            '~' => SyntaxKind::TILDE,
-            '%' => SyntaxKind::PERCENT,
-            _ => SyntaxKind::ERROR,
+            '[' => OpenBracket,
+            ']' => CloseBracket,
+            '@' => At,
+            ':' => Colon,
+            '$' => Dollar,
+            '#' => Hash,
+            '!' => Bang,
+            '?' => Question,
+            '=' => Eq,
+            '<' => Lt,
+            '>' => Gt,
+            '+' => Plus,
+            '-' => Minus,
+            '*' => Star,
+            '&' => And,
+            '|' => Or,
+            '^' => Caret,
+            '~' => Tilde,
+            '%' => Percent,
+            _ => Unknown,
         }
     }
 
-    fn scan_identifier(&mut self) -> SyntaxKind {
+    fn scan_identifier(&mut self) -> TokenKind {
         self.cursor.bump_while(symbol::is_identifier_continue);
-        SyntaxKind::IDENTIFIER
+        Identifier
     }
 
-    fn scan_whitespace(&mut self) -> SyntaxKind {
+    fn scan_whitespace(&mut self) -> TokenKind {
         self.cursor.bump_while(char::is_whitespace);
-        SyntaxKind::WHITESPACE
+        Whitespace
     }
 
-    fn scan_line_comment(&mut self) -> SyntaxKind {
+    fn scan_line_comment(&mut self) -> TokenKind {
         self.cursor.bump_while(|c| c != '\n');
-        SyntaxKind::LINE_COMMENT
+        LineComment
     }
 
-    fn scan_block_comment(&mut self) -> SyntaxKind {
+    fn scan_block_comment(&mut self) -> TokenKind {
         self.cursor.bump();
 
         let mut depth: usize = 1;
@@ -181,25 +197,26 @@ impl Tokenizer<'_> {
             }
         }
 
-        if depth == 0 {
-            SyntaxKind::BLOCK_COMMENT
-        } else {
-            SyntaxKind::ERROR
-        }
+        BlockComment { terminated: depth == 0 }
     }
 
-    fn scan_number(&mut self, first_digit: char) -> SyntaxKind {
+    fn scan_number(&mut self, first_digit: char) -> LiteralKind {
+        let mut base = Base::Decimal;
+
         if first_digit == '0' {
             let has_digits = match self.cursor.first() {
                 'b' => {
+                    base = Base::Binary;
                     self.cursor.bump();
                     self.scan_decimal_digits()
                 }
                 'o' => {
+                    base = Base::Octal;
                     self.cursor.bump();
                     self.scan_decimal_digits()
                 }
                 'x' => {
+                    base = Base::Hexadecimal;
                     self.cursor.bump();
                     self.scan_hexadecimal_digits()
                 }
@@ -207,11 +224,11 @@ impl Tokenizer<'_> {
                     self.scan_decimal_digits();
                     true
                 }
-                _ => return SyntaxKind::INT_LITERAL,
+                _ => return LiteralKind::Int { base, empty: false },
             };
 
             if !has_digits {
-                return SyntaxKind::INT_LITERAL;
+                return LiteralKind::Int { base, empty: true };
             }
         } else {
             self.scan_decimal_digits();
@@ -222,25 +239,26 @@ impl Tokenizer<'_> {
                 && !symbol::is_identifier_start(self.cursor.second()) =>
             {
                 self.cursor.bump();
+                let mut empty_exponent = false;
                 if self.cursor.first().is_ascii_digit() {
                     self.scan_decimal_digits();
                     match self.cursor.first() {
                         'e' | 'E' => {
                             self.cursor.bump();
-                            self.scan_float_exponent();
+                            empty_exponent = !self.scan_float_exponent();
                         }
                         _ => (),
                     }
                 }
 
-                SyntaxKind::FLOAT_LITERAL
+                LiteralKind::Float { base, empty_exponent }
             }
             'e' | 'E' => {
                 self.cursor.bump();
-                self.scan_float_exponent();
-                SyntaxKind::FLOAT_LITERAL
+                let empty_exponent = !self.scan_float_exponent();
+                LiteralKind::Float { base, empty_exponent }
             }
-            _ => SyntaxKind::INT_LITERAL,
+            _ => LiteralKind::Int { base, empty: false },
         }
     }
 
@@ -282,31 +300,36 @@ impl Tokenizer<'_> {
         has_digits
     }
 
-    fn scan_float_exponent(&mut self) {
+    fn scan_float_exponent(&mut self) -> bool {
         if matches!(self.cursor.first(), '-' | '+') {
             self.cursor.bump();
         }
 
-        self.scan_decimal_digits();
+        self.scan_decimal_digits()
     }
 
-    fn scan_double_quoted_string(&mut self) -> SyntaxKind {
-        let terminated = self.scan_double_quoted_string_literal();
+    fn scan_double_quoted_string(&mut self) -> TokenKind {
+        let (terminated, slot_after) = self.scan_double_quoted_string_literal();
+        let suffix_start = self.cursor.consumed_len();
 
         if terminated {
-            SyntaxKind::STRING_LITERAL
-        } else {
-            SyntaxKind::STRING_LITERAL_FRAGMENT
+            self.scan_identifier();
         }
+
+        let kind = LiteralKind::String { terminated, slot_after };
+        let suffix_start =
+            if self.cursor.consumed_len() > suffix_start { Some(suffix_start) } else { None };
+
+        Literal { kind, suffix_start }
     }
 
-    fn scan_double_quoted_string_literal(&mut self) -> bool {
+    fn scan_double_quoted_string_literal(&mut self) -> (bool, bool) {
         loop {
             let first = self.cursor.first();
             let second = self.cursor.second();
 
             if first == '$' && (second == '{' || symbol::is_identifier_start(second)) {
-                return false;
+                return (true, true);
             }
 
             let next = self.cursor.bump();
@@ -316,14 +339,14 @@ impl Tokenizer<'_> {
                         let mode = self.mode_stack.pop();
                         debug_assert_eq!(Some(TokenizerMode::InterpolatedString), mode);
 
-                        return true;
+                        return (true, false);
                     }
                     '\\' if symbol::is_reserved_string_symbol(self.cursor.first()) => {
                         self.cursor.bump();
                     }
                     _ => (),
                 },
-                None => return false,
+                None => return (false, false),
             }
         }
     }

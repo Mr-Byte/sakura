@@ -1,4 +1,4 @@
-use crate::syntax::{ast::AstNode, SyntaxError, SyntaxNode};
+use crate::syntax::{ast::AstNode, SyntaxNode};
 use rowan::GreenNode;
 use std::{marker::PhantomData, sync::Arc};
 
@@ -52,6 +52,7 @@ impl Parse<SyntaxNode> {
 }
 
 pub use crate::syntax::ast::SourceFile;
+use crate::syntax::SyntaxError;
 
 impl SourceFile {
     pub fn parse(_text: &str) -> Parse<SourceFile> {

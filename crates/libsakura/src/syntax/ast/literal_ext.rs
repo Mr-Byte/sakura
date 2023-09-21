@@ -56,11 +56,10 @@ impl super::Literal {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+    use crate::syntax::builder::SyntaxTreeBuilder;
     use crate::{
-        syntax::{
-            ast::{Literal, LiteralKind},
-            SyntaxKind, SyntaxTreeBuilder,
-        },
+        syntax::{ast::Literal, SyntaxKind},
         T,
     };
 

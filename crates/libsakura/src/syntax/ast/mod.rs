@@ -94,10 +94,11 @@ mod support {
 
 #[cfg(test)]
 mod test {
+    use crate::syntax::builder::SyntaxTreeBuilder;
     use crate::{
         syntax::{
             ast::{Expr, InterpolatedStringSlot},
-            SyntaxKind, SyntaxTreeBuilder,
+            SyntaxKind,
         },
         T,
     };

@@ -5,9 +5,6 @@ mod token;
 mod tokenizer;
 
 /// Tokenize the provided input into an iterator of tokens.
-///
-/// If an error occurs during tokenization an `ERROR` token will be returned.
-/// The iterator will end on either the end of input or an unrecoverable error.
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
     let mut tokenizer = Tokenizer::new(input);
 
@@ -16,8 +13,7 @@ pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
 
 #[cfg(test)]
 mod test {
-    use crate::syntax::SyntaxKind;
-
+    use self::token::{Base, LiteralKind, TokenKind};
     use super::*;
     use std::collections::HashMap;
 
@@ -25,7 +21,10 @@ mod test {
     fn tokenizes_basic_double_quoted_string() {
         let input = r#""test""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
-        let expected = SyntaxKind::STRING_LITERAL;
+        let expected = TokenKind::Literal {
+            kind: LiteralKind::String { terminated: true, slot_after: false },
+            suffix_start: None,
+        };
 
         assert_eq!(1, tokens.len());
         assert_eq!(expected, tokens[0].kind);
@@ -35,28 +34,43 @@ mod test {
     fn tokenizes_interpolated_string_with_identifier() {
         let input = r#""$test""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
-        let expected = SyntaxKind::STRING_LITERAL_FRAGMENT;
+        let expected = TokenKind::Literal {
+            kind: LiteralKind::String { terminated: true, slot_after: true },
+            suffix_start: None,
+        };
 
         assert_eq!(4, tokens.len());
         assert_eq!(expected, tokens[0].kind);
-        assert_eq!(SyntaxKind::DOLLAR, tokens[1].kind);
-        assert_eq!(SyntaxKind::IDENTIFIER, tokens[2].kind);
-        assert_eq!(SyntaxKind::STRING_LITERAL, tokens[3].kind);
+        assert_eq!(TokenKind::Dollar, tokens[1].kind);
+        assert_eq!(TokenKind::Identifier, tokens[2].kind);
+        assert_eq!(
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: true, slot_after: false },
+                suffix_start: None
+            },
+            tokens[3].kind
+        );
     }
 
     #[test]
     fn tokenizes_interpolated_string_with_expression() {
         let input = r#""${test}""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
-        let open_expected = SyntaxKind::STRING_LITERAL_FRAGMENT;
-        let close_expected = SyntaxKind::STRING_LITERAL;
+        let open_expected = TokenKind::Literal {
+            kind: LiteralKind::String { terminated: true, slot_after: true },
+            suffix_start: None,
+        };
+        let close_expected = TokenKind::Literal {
+            kind: LiteralKind::String { terminated: true, slot_after: false },
+            suffix_start: None,
+        };
 
         assert_eq!(6, tokens.len());
         assert_eq!(open_expected, tokens[0].kind);
-        assert_eq!(SyntaxKind::DOLLAR, tokens[1].kind);
-        assert_eq!(SyntaxKind::LEFT_CURLY, tokens[2].kind);
-        assert_eq!(SyntaxKind::IDENTIFIER, tokens[3].kind);
-        assert_eq!(SyntaxKind::RIGHT_CURLY, tokens[4].kind);
+        assert_eq!(TokenKind::Dollar, tokens[1].kind);
+        assert_eq!(TokenKind::OpenBrace, tokens[2].kind);
+        assert_eq!(TokenKind::Identifier, tokens[3].kind);
+        assert_eq!(TokenKind::CloseBrace, tokens[4].kind);
         assert_eq!(close_expected, tokens[5].kind);
     }
 
@@ -66,7 +80,7 @@ mod test {
         let tokens = tokenize(input).collect::<Vec<_>>();
 
         assert_eq!(1, tokens.len());
-        assert_eq!(SyntaxKind::IDENTIFIER, tokens[0].kind);
+        assert_eq!(TokenKind::Identifier, tokens[0].kind);
         assert_eq!("test", &input[..tokens[0].len]);
     }
 
@@ -74,7 +88,10 @@ mod test {
     fn tokenizes_decimal_integer_numbers() {
         let input = "123";
         let tokens = tokenize(input).collect::<Vec<_>>();
-        let expected = SyntaxKind::INT_LITERAL;
+        let expected = TokenKind::Literal {
+            kind: LiteralKind::Int { base: Base::Decimal, empty: false },
+            suffix_start: None,
+        };
 
         assert_eq!(1, tokens.len());
         assert_eq!(expected, tokens[0].kind);
@@ -85,7 +102,10 @@ mod test {
     fn tokenizes_hexadecimal_integer_numbers() {
         let input = "0x0123456789ABCDEFabcdef";
         let tokens = tokenize(input).collect::<Vec<_>>();
-        let expected = SyntaxKind::INT_LITERAL;
+        let expected = TokenKind::Literal {
+            kind: LiteralKind::Int { base: Base::Hexadecimal, empty: false },
+            suffix_start: None,
+        };
 
         assert_eq!(1, tokens.len());
         assert_eq!(expected, tokens[0].kind);
@@ -96,7 +116,10 @@ mod test {
     fn tokenizes_octal_integer_numbers() {
         let input = "0o01234567";
         let tokens = tokenize(input).collect::<Vec<_>>();
-        let expected = SyntaxKind::INT_LITERAL;
+        let expected = TokenKind::Literal {
+            kind: LiteralKind::Int { base: Base::Octal, empty: false },
+            suffix_start: None,
+        };
 
         assert_eq!(1, tokens.len());
         assert_eq!(expected, tokens[0].kind);
@@ -107,7 +130,10 @@ mod test {
     fn tokenizes_binary_integer_numbers() {
         let input = "0b01010101010101010101010101010101";
         let tokens = tokenize(input).collect::<Vec<_>>();
-        let expected = SyntaxKind::INT_LITERAL;
+        let expected = TokenKind::Literal {
+            kind: LiteralKind::Int { base: Base::Binary, empty: false },
+            suffix_start: None,
+        };
 
         assert_eq!(1, tokens.len());
         assert_eq!(expected, tokens[0].kind);
@@ -117,30 +143,30 @@ mod test {
     #[test]
     fn tokenizes_symbols() {
         let mut symbols = HashMap::new();
-        symbols.insert(",", SyntaxKind::COMMA);
-        symbols.insert(":", SyntaxKind::COLON);
-        symbols.insert("(", SyntaxKind::LEFT_PAREN);
-        symbols.insert(")", SyntaxKind::RIGHT_PAREN);
-        symbols.insert("{", SyntaxKind::LEFT_CURLY);
-        symbols.insert("}", SyntaxKind::RIGHT_CURLY);
-        symbols.insert("[", SyntaxKind::LEFT_BRACKET);
-        symbols.insert("]", SyntaxKind::RIGHT_BRACKET);
-        symbols.insert("+", SyntaxKind::PLUS);
-        symbols.insert("-", SyntaxKind::MINUS);
-        symbols.insert("*", SyntaxKind::STAR);
-        symbols.insert("/", SyntaxKind::SLASH);
-        symbols.insert("%", SyntaxKind::PERCENT);
-        symbols.insert("<", SyntaxKind::LESS_THAN);
-        symbols.insert(">", SyntaxKind::GREATER_THAN);
-        symbols.insert("=", SyntaxKind::EQUAL);
-        symbols.insert("!", SyntaxKind::BANG);
-        symbols.insert("?", SyntaxKind::QUESTION);
-        symbols.insert("@", SyntaxKind::AT);
-        symbols.insert("$", SyntaxKind::DOLLAR);
-        symbols.insert("#", SyntaxKind::HASH);
-        symbols.insert("^", SyntaxKind::CARET);
-        symbols.insert("&", SyntaxKind::AMPERSAND);
-        symbols.insert("|", SyntaxKind::PIPE);
+        symbols.insert(",", TokenKind::Comma);
+        symbols.insert(":", TokenKind::Colon);
+        symbols.insert("(", TokenKind::OpenParen);
+        symbols.insert(")", TokenKind::CloseParen);
+        symbols.insert("{", TokenKind::OpenBrace);
+        symbols.insert("}", TokenKind::CloseBrace);
+        symbols.insert("[", TokenKind::OpenBracket);
+        symbols.insert("]", TokenKind::CloseBracket);
+        symbols.insert("+", TokenKind::Plus);
+        symbols.insert("-", TokenKind::Minus);
+        symbols.insert("*", TokenKind::Star);
+        symbols.insert("/", TokenKind::Slash);
+        symbols.insert("%", TokenKind::Percent);
+        symbols.insert("<", TokenKind::Lt);
+        symbols.insert(">", TokenKind::Gt);
+        symbols.insert("=", TokenKind::Eq);
+        symbols.insert("!", TokenKind::Bang);
+        symbols.insert("?", TokenKind::Question);
+        symbols.insert("@", TokenKind::At);
+        symbols.insert("$", TokenKind::Dollar);
+        symbols.insert("#", TokenKind::Hash);
+        symbols.insert("^", TokenKind::Caret);
+        symbols.insert("&", TokenKind::And);
+        symbols.insert("|", TokenKind::Or);
 
         for (symbol, kind) in symbols {
             let tokens = tokenize(symbol).collect::<Vec<_>>();
@@ -155,23 +181,35 @@ mod test {
         let input = r#"let x = "${y+2}, $z""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
         let expected_kinds = vec![
-            SyntaxKind::IDENTIFIER,
-            SyntaxKind::WHITESPACE,
-            SyntaxKind::IDENTIFIER,
-            SyntaxKind::WHITESPACE,
-            SyntaxKind::EQUAL,
-            SyntaxKind::WHITESPACE,
-            SyntaxKind::STRING_LITERAL_FRAGMENT,
-            SyntaxKind::DOLLAR,
-            SyntaxKind::LEFT_CURLY,
-            SyntaxKind::IDENTIFIER,
-            SyntaxKind::PLUS,
-            SyntaxKind::INT_LITERAL,
-            SyntaxKind::RIGHT_CURLY,
-            SyntaxKind::STRING_LITERAL_FRAGMENT,
-            SyntaxKind::DOLLAR,
-            SyntaxKind::IDENTIFIER,
-            SyntaxKind::STRING_LITERAL,
+            TokenKind::Identifier,
+            TokenKind::Whitespace,
+            TokenKind::Identifier,
+            TokenKind::Whitespace,
+            TokenKind::Eq,
+            TokenKind::Whitespace,
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: true, slot_after: true },
+                suffix_start: None,
+            },
+            TokenKind::Dollar,
+            TokenKind::OpenBrace,
+            TokenKind::Identifier,
+            TokenKind::Plus,
+            TokenKind::Literal {
+                kind: LiteralKind::Int { base: Base::Decimal, empty: false },
+                suffix_start: None,
+            },
+            TokenKind::CloseBrace,
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: true, slot_after: true },
+                suffix_start: None,
+            },
+            TokenKind::Dollar,
+            TokenKind::Identifier,
+            TokenKind::Literal {
+                kind: LiteralKind::String { terminated: true, slot_after: false },
+                suffix_start: None,
+            },
         ];
 
         for (expected, actual) in expected_kinds.iter().zip(tokens.iter()) {
