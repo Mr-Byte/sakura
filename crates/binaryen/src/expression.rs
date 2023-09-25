@@ -26,7 +26,7 @@ impl<'module> Expression<'module> {
     }
 
     #[inline]
-    pub(crate) fn as_ptr(self) -> BinaryenExpressionRef {
+    pub(crate) fn into_ptr(self) -> BinaryenExpressionRef {
         self.inner.as_ptr()
     }
 }
@@ -35,15 +35,15 @@ unsafe impl<'module> UnsafeMaybe for Option<Expression<'module>> {
     type Out = BinaryenExpression;
 
     #[inline]
-    fn as_ptr_or_null(self: Self) -> *mut Self::Out {
-        self.map_or(std::ptr::null_mut(), Expression::as_ptr)
+    fn into_nullable_ptr(self) -> *mut Self::Out {
+        self.map_or(std::ptr::null_mut(), Expression::into_ptr)
     }
 }
 
 impl Module {
     pub fn expr_binary(&self, op: Operator, lhs: Expression, rhs: Expression) -> Expression {
         let expr =
-            unsafe { BinaryenBinary(self.module, op.into_i32(), lhs.as_ptr(), rhs.as_ptr()) };
+            unsafe { BinaryenBinary(self.module, op.into_i32(), lhs.into_ptr(), rhs.into_ptr()) };
 
         Expression::new(expr)
     }
@@ -81,8 +81,8 @@ impl Module {
             BinaryenBreak(
                 self.module,
                 name.as_ptr(),
-                condition.as_ptr_or_null(),
-                value.as_ptr_or_null(),
+                condition.into_nullable_ptr(),
+                value.into_nullable_ptr(),
             )
         };
         Expression::new(expr)
@@ -122,7 +122,12 @@ impl Module {
         if_false: Option<Expression>,
     ) -> Expression {
         let expr = unsafe {
-            BinaryenIf(self.module, condition.as_ptr(), if_true.as_ptr(), if_false.as_ptr_or_null())
+            BinaryenIf(
+                self.module,
+                condition.into_ptr(),
+                if_true.into_ptr(),
+                if_false.into_nullable_ptr(),
+            )
         };
 
         Expression::new(expr)
@@ -135,20 +140,20 @@ impl Module {
     }
 
     pub fn expr_local_set(&self, index: u32, value: Expression) -> Expression {
-        let expr = unsafe { BinaryenLocalSet(self.module, index, value.as_ptr()) };
+        let expr = unsafe { BinaryenLocalSet(self.module, index, value.into_ptr()) };
 
         Expression::new(expr)
     }
 
     pub fn expr_loop(&self, label: &str, body: Expression) -> Expression {
         let label = CString::new(label).expect("failed to convert C string");
-        let expr = unsafe { BinaryenLoop(self.module, label.as_ptr(), body.as_ptr()) };
+        let expr = unsafe { BinaryenLoop(self.module, label.as_ptr(), body.into_ptr()) };
 
         Expression::new(expr)
     }
 
     pub fn expr_return(&self, value: Expression) -> Expression {
-        let expr = unsafe { BinaryenReturn(self.module, value.as_ptr()) };
+        let expr = unsafe { BinaryenReturn(self.module, value.into_ptr()) };
 
         Expression::new(expr)
     }
@@ -163,9 +168,9 @@ impl Module {
         let expr = unsafe {
             BinaryenSelect(
                 self.module,
-                condition.as_ptr(),
-                if_true.as_ptr(),
-                if_false.as_ptr(),
+                condition.into_ptr(),
+                if_true.into_ptr(),
+                if_false.into_ptr(),
                 type_.into_usize(),
             )
         };
@@ -174,7 +179,7 @@ impl Module {
     }
 
     pub fn expr_unary(&self, op: Operator, expr: Expression) -> Expression {
-        let expr = unsafe { BinaryenUnary(self.module, op.into_i32(), expr.as_ptr()) };
+        let expr = unsafe { BinaryenUnary(self.module, op.into_i32(), expr.into_ptr()) };
 
         Expression::new(expr)
     }

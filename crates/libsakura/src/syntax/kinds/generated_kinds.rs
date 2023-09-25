@@ -84,6 +84,7 @@ pub enum SyntaxKind {
     ERROR,
     LINE_COMMENT,
     BLOCK_COMMENT,
+    INT_LITERAL_PREFIX,
     SOURCE_FILE,
     NAME,
     LITERAL,

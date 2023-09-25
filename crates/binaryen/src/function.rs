@@ -46,7 +46,7 @@ impl Module {
                 // TODO: Handle variadic types?
                 std::ptr::null_mut(),
                 0,
-                body.as_ptr(),
+                body.into_ptr(),
             )
         };
 

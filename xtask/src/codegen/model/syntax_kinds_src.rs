@@ -66,7 +66,14 @@ pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
         "STRING_LITERAL",
         "STRING_LITERAL_FRAGMENT",
     ],
-    tokens: &["IDENTIFIER", "WHITESPACE", "ERROR", "LINE_COMMENT", "BLOCK_COMMENT"],
+    tokens: &[
+        "IDENTIFIER",
+        "WHITESPACE",
+        "ERROR",
+        "LINE_COMMENT",
+        "BLOCK_COMMENT",
+        "INT_LITERAL_PREFIX",
+    ],
     nodes: &[
         "SOURCE_FILE",
         "NAME",

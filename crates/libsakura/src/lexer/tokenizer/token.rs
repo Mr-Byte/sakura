@@ -5,7 +5,7 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(kind: TokenKind, len: usize) -> Token {
+    pub(crate) fn new(kind: TokenKind, len: usize) -> Token {
         Token { kind, len }
     }
 }
@@ -83,8 +83,8 @@ pub enum LiteralKind {
     Int { base: Base, empty: bool },
     Float { base: Base, empty_exponent: bool },
     Char { terminated: bool },
-    String { terminated: bool, slot_after: bool },
-    // TODO: Figure out how to handle interpolated strings.
+    String { terminated: bool },
+    StringPart { terminated: bool },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]

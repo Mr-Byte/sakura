@@ -95,7 +95,7 @@ fn get_single_char_tokens(kinds: &SyntaxKindsSrc<'_>) -> (Vec<char>, Vec<proc_ma
         .iter()
         .filter(|(token, _)| token.len() == 1)
         .filter_map(|(token, name)| {
-            token.chars().nth(0).map(|char| (char, format_ident!("{}", name)))
+            token.chars().next().map(|char| (char, format_ident!("{}", name)))
         })
         .unzip()
 }

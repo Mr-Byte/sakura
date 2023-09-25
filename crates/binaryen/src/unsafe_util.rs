@@ -1,5 +1,5 @@
 pub(crate) unsafe trait UnsafeMaybe {
     type Out;
 
-    fn as_ptr_or_null(self: Self) -> *mut Self::Out;
+    fn into_nullable_ptr(self) -> *mut Self::Out;
 }

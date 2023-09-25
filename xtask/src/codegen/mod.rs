@@ -61,7 +61,7 @@ fn generate_syntax_kinds(root_path: &std::path::Path) -> anyhow::Result<(), Code
 }
 
 fn generate_syntax_nodes(
-    root_path: &std::path::PathBuf,
+    root_path: &std::path::Path,
     grammar: &GrammarSrc,
 ) -> anyhow::Result<(), CodegenError> {
     let src = generators::syntax_nodes::generate(SYNTAX_KINDS_SRC, grammar)?;
@@ -71,7 +71,7 @@ fn generate_syntax_nodes(
 }
 
 fn generate_syntax_tokens(
-    root_path: &std::path::PathBuf,
+    root_path: &std::path::Path,
     grammar: &GrammarSrc,
 ) -> anyhow::Result<(), CodegenError> {
     let src = generators::syntax_tokens::generate(grammar)?;
