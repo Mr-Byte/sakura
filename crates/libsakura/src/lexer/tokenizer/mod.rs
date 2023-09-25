@@ -29,10 +29,11 @@ struct Tokenizer<'a> {
     mode_stack: Vec<TokenizerMode>,
 }
 
+use crate::lexer::tokenizer::cursor::EOF;
 use TokenKind::*;
 
 /// Implement the core functionality of the tokenizer. This includes the core state machine and handling
-/// which lexer mode to dispatch when `next_token` is called.
+/// which lexer mode to dispatch when [`next_token`](Tokenizer::next_token) is called.
 impl Tokenizer<'_> {
     const DEFAULT_MODE_STACK_CAPACITY: usize = 4;
 
@@ -46,10 +47,10 @@ impl Tokenizer<'_> {
     fn next_token(&mut self) -> Option<Token> {
         let kind = match self.mode_stack.last() {
             None | Some(TokenizerMode::Default) => self.next_token_default()?,
-            Some(TokenizerMode::InterpolatedString) => self.next_token_interpolated_string(),
+            Some(TokenizerMode::InterpolatedString) => self.next_token_interpolated_string()?,
         };
 
-        let token = Token { kind, len: self.cursor.consumed_len() };
+        let token = Token::new(kind, self.cursor.consumed_len());
         self.cursor.reset_len();
 
         Some(token)
@@ -85,10 +86,7 @@ impl Tokenizer<'_> {
                 Literal { kind: literal_kind, suffix_start }
             }
             // Strings
-            '"' => {
-                self.mode_stack.push(TokenizerMode::InterpolatedString);
-                self.scan_double_quoted_string()
-            }
+            '"' => self.scan_double_quoted_string(),
             '\'' => {
                 let terminated = self.scan_single_quoted_string();
                 let suffix_start = self.cursor.consumed_len();
@@ -114,22 +112,33 @@ impl Tokenizer<'_> {
     }
 
     /// Scan tokens that are part of interpolated strings as represented by the `InterpolatedString` state.
-    fn next_token_interpolated_string(&mut self) -> TokenKind {
-        match self.cursor.first() {
+    fn next_token_interpolated_string(&mut self) -> Option<TokenKind> {
+        let kind = match self.cursor.first() {
             '$' => {
                 self.cursor.bump();
 
                 Dollar
             }
             '{' => {
+                // NOTE: An expression is being tokenized, so switch to the default mode.
                 self.cursor.bump();
                 self.mode_stack.push(TokenizerMode::Default);
 
                 OpenBrace
             }
             c if symbol::is_identifier_start(c) => self.scan_identifier(),
+            c if c == EOF => {
+                // NOTE: Terminate tokenization early if we reach the end of the file and cleanup
+                // pop the mode stack.
+                let mode = self.mode_stack.pop();
+                debug_assert_eq!(Some(TokenizerMode::InterpolatedString), mode);
+
+                return None;
+            }
             _ => self.scan_double_quoted_string(),
-        }
+        };
+
+        Some(kind)
     }
 }
 
@@ -143,10 +152,13 @@ impl Tokenizer<'_> {
             '(' => OpenParen,
             ')' => CloseParen,
             '{' => {
+                // NOTE: Push the mode stack when we encounter an opening brace.
                 self.mode_stack.push(TokenizerMode::Default);
                 OpenBrace
             }
             '}' => {
+                // NOTE: Pop the mode stack when we encounter a closing brace and then assert that
+                // we are in the default mode in debug builds.
                 let mode = self.mode_stack.pop();
                 debug_assert!(matches!(mode, Some(TokenizerMode::Default) | None));
 
@@ -349,6 +361,8 @@ impl Tokenizer<'_> {
             let second = self.cursor.second();
 
             if first == '$' && (second == '{' || symbol::is_identifier_start(second)) {
+                // NOTE: We are now in an interpolated string, so we need to push the mode stack.
+                self.mode_stack.push(TokenizerMode::InterpolatedString);
                 return (true, true);
             }
 
@@ -356,8 +370,11 @@ impl Tokenizer<'_> {
             match next {
                 Some(c) => match c {
                     '"' => {
-                        let mode = self.mode_stack.pop();
-                        debug_assert_eq!(Some(TokenizerMode::InterpolatedString), mode);
+                        // NOTE: If we are in an interpolated string, we need to pop the mode stack.
+                        if let Some(TokenizerMode::InterpolatedString) = self.mode_stack.last() {
+                            let mode = self.mode_stack.pop();
+                            debug_assert_eq!(Some(TokenizerMode::InterpolatedString), mode);
+                        }
 
                         return (true, false);
                     }
@@ -399,7 +416,18 @@ mod test {
             Literal { kind: LiteralKind::String { terminated: true }, suffix_start: None };
 
         assert_eq!(1, tokens.len());
-        assert_eq!(expected, tokens[0].kind);
+        assert_eq!(expected, tokens[0].kind());
+    }
+
+    #[test]
+    fn tokenizes_unterminated_double_quoted_string() {
+        let input = r#""test"#;
+        let tokens = tokenize(input).collect::<Vec<_>>();
+        let expected =
+            Literal { kind: LiteralKind::String { terminated: false }, suffix_start: None };
+
+        assert_eq!(1, tokens.len());
+        assert_eq!(expected, tokens[0].kind());
     }
 
     #[test]
@@ -410,12 +438,12 @@ mod test {
             Literal { kind: LiteralKind::StringPart { terminated: true }, suffix_start: None };
 
         assert_eq!(4, tokens.len());
-        assert_eq!(expected, tokens[0].kind);
-        assert_eq!(Dollar, tokens[1].kind);
-        assert_eq!(Identifier, tokens[2].kind);
+        assert_eq!(expected, tokens[0].kind());
+        assert_eq!(Dollar, tokens[1].kind());
+        assert_eq!(Identifier, tokens[2].kind());
         assert_eq!(
             Literal { kind: LiteralKind::String { terminated: true }, suffix_start: None },
-            tokens[3].kind
+            tokens[3].kind()
         );
     }
 
@@ -429,12 +457,46 @@ mod test {
             Literal { kind: LiteralKind::String { terminated: true }, suffix_start: None };
 
         assert_eq!(6, tokens.len());
-        assert_eq!(open_expected, tokens[0].kind);
-        assert_eq!(Dollar, tokens[1].kind);
-        assert_eq!(OpenBrace, tokens[2].kind);
-        assert_eq!(Identifier, tokens[3].kind);
-        assert_eq!(CloseBrace, tokens[4].kind);
-        assert_eq!(close_expected, tokens[5].kind);
+        assert_eq!(open_expected, tokens[0].kind());
+        assert_eq!(Dollar, tokens[1].kind());
+        assert_eq!(OpenBrace, tokens[2].kind());
+        assert_eq!(Identifier, tokens[3].kind());
+        assert_eq!(CloseBrace, tokens[4].kind());
+        assert_eq!(close_expected, tokens[5].kind());
+    }
+
+    #[test]
+    fn tokenizes_nested_interpolated_strings() {
+        let input = r#""${"${x}"}""#;
+        let tokens = tokenize(input).collect::<Vec<_>>();
+        let expected = vec![
+            Token::new(
+                Literal { kind: LiteralKind::StringPart { terminated: true }, suffix_start: None },
+                1,
+            ),
+            Token::new(Dollar, 1),
+            Token::new(OpenBrace, 1),
+            Token::new(
+                Literal { kind: LiteralKind::StringPart { terminated: true }, suffix_start: None },
+                1,
+            ),
+            Token::new(Dollar, 1),
+            Token::new(OpenBrace, 1),
+            Token::new(Identifier, 1),
+            Token::new(CloseBrace, 1),
+            Token::new(
+                Literal { kind: LiteralKind::String { terminated: true }, suffix_start: None },
+                1,
+            ),
+            Token::new(CloseBrace, 1),
+            Token::new(
+                Literal { kind: LiteralKind::String { terminated: true }, suffix_start: None },
+                1,
+            ),
+        ];
+
+        assert_eq!(11, tokens.len());
+        assert_eq!(expected, tokens);
     }
 
     #[test]
@@ -443,8 +505,8 @@ mod test {
         let tokens = tokenize(input).collect::<Vec<_>>();
 
         assert_eq!(1, tokens.len());
-        assert_eq!(Identifier, tokens[0].kind);
-        assert_eq!("test", &input[..tokens[0].len]);
+        assert_eq!(Identifier, tokens[0].kind());
+        assert_eq!("test", &input[..tokens[0].len()]);
     }
 
     #[test]
@@ -457,8 +519,8 @@ mod test {
         };
 
         assert_eq!(1, tokens.len());
-        assert_eq!(expected, tokens[0].kind);
-        assert_eq!("123", &input[..tokens[0].len]);
+        assert_eq!(expected, tokens[0].kind());
+        assert_eq!("123", &input[..tokens[0].len()]);
     }
 
     #[test]
@@ -471,8 +533,8 @@ mod test {
         };
 
         assert_eq!(1, tokens.len());
-        assert_eq!(expected, tokens[0].kind);
-        assert_eq!("0x0123456789ABCDEFabcdef", &input[..tokens[0].len]);
+        assert_eq!(expected, tokens[0].kind());
+        assert_eq!("0x0123456789ABCDEFabcdef", &input[..tokens[0].len()]);
     }
 
     #[test]
@@ -485,8 +547,8 @@ mod test {
         };
 
         assert_eq!(1, tokens.len());
-        assert_eq!(expected, tokens[0].kind);
-        assert_eq!("0o01234567", &input[..tokens[0].len]);
+        assert_eq!(expected, tokens[0].kind());
+        assert_eq!("0o01234567", &input[..tokens[0].len()]);
     }
 
     #[test]
@@ -499,8 +561,8 @@ mod test {
         };
 
         assert_eq!(1, tokens.len());
-        assert_eq!(expected, tokens[0].kind);
-        assert_eq!("0b01010101010101010101010101010101", &input[..tokens[0].len]);
+        assert_eq!(expected, tokens[0].kind());
+        assert_eq!("0b01010101010101010101010101010101", &input[..tokens[0].len()]);
     }
 
     #[test]
@@ -534,8 +596,8 @@ mod test {
         for (symbol, kind) in symbols {
             let tokens = tokenize(symbol).collect::<Vec<_>>();
             assert_eq!(1, tokens.len());
-            assert_eq!(kind, tokens[0].kind);
-            assert_eq!(symbol.len(), tokens[0].len);
+            assert_eq!(kind, tokens[0].kind());
+            assert_eq!(symbol.len(), tokens[0].len());
         }
     }
 
@@ -567,7 +629,7 @@ mod test {
         ];
 
         for (expected, actual) in expected_kinds.iter().zip(tokens.iter()) {
-            assert_eq!(expected, &actual.kind);
+            assert_eq!(expected, &actual.kind());
         }
     }
 }

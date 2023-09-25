@@ -1,10 +1,11 @@
-use crate::lexer::tokenizer::{Base, LiteralKind, Token, TokenKind};
 use crate::syntax::SyntaxKind;
-use crate::T;
+use converter::TokenConverter;
 use std::ops::Range;
 
+mod converter;
 pub mod tokenizer;
 
+/// A borrowed string that has been lexed into tokens.
 #[derive(Debug)]
 pub struct LexedStr<'a> {
     text: &'a str,
@@ -17,167 +18,103 @@ impl<'a> LexedStr<'a> {
     pub fn new(text: &str) -> LexedStr {
         TokenConverter::convert(text)
     }
-}
 
-struct TokenConverter<'a> {
-    result: LexedStr<'a>,
-    offset: usize,
-}
-
-impl<'a> TokenConverter<'a> {
-    fn new(text: &'a str) -> TokenConverter<'a> {
-        TokenConverter {
-            result: LexedStr { text, kinds: Vec::new(), tokens: Vec::new(), errors: Vec::new() },
-            offset: 0,
-        }
+    pub fn as_str(&self) -> &'a str {
+        self.text
     }
 
-    fn convert(text: &str) -> LexedStr {
-        let tokens = tokenizer::tokenize(text);
-        let mut converter = TokenConverter::new(text);
-
-        for token in tokens {
-            let text = &converter.result.text[converter.offset..][..token.len];
-
-            converter.append_token(token, text);
-        }
-
-        converter.result
+    pub fn len(&self) -> usize {
+        self.kinds.len() - 1
     }
 
-    fn append_token(&mut self, token: Token, text: &str) {
-        if let TokenKind::Literal { kind, suffix_start } = token.kind.clone() {
-            self.append_literal(kind, suffix_start, text);
-            return;
-        }
-
-        let mut err = None::<&str>;
-        let syntax_kind = match token.kind {
-            TokenKind::Comma => T![","],
-            TokenKind::Dot => T!["."],
-            TokenKind::OpenParen => T!["("],
-            TokenKind::CloseParen => T![")"],
-            TokenKind::OpenBrace => T!["{"],
-            TokenKind::CloseBrace => T!["}"],
-            TokenKind::OpenBracket => T!["["],
-            TokenKind::CloseBracket => T!["]"],
-            TokenKind::At => T!["@"],
-            TokenKind::Colon => T![":"],
-            TokenKind::Dollar => T!["$"],
-            TokenKind::Hash => T!["#"],
-            TokenKind::Bang => T!["!"],
-            TokenKind::Question => T!["?"],
-            TokenKind::Eq => T!["="],
-            TokenKind::Lt => T!["<"],
-            TokenKind::Gt => T![">"],
-            TokenKind::Plus => T!["+"],
-            TokenKind::Minus => T!["-"],
-            TokenKind::Star => T!["*"],
-            TokenKind::Slash => T!["/"],
-            TokenKind::And => T!["&"],
-            TokenKind::Or => T!["|"],
-            TokenKind::Caret => T!["^"],
-            TokenKind::Tilde => T!["~"],
-            TokenKind::Percent => T!["%"],
-            TokenKind::LineComment => SyntaxKind::LINE_COMMENT,
-            TokenKind::BlockComment { terminated } if terminated => {
-                err = Some("Missing trailing */ required to terminate a block comment.");
-                SyntaxKind::BLOCK_COMMENT
-            }
-            TokenKind::BlockComment { .. } => SyntaxKind::BLOCK_COMMENT,
-            TokenKind::Whitespace => SyntaxKind::WHITESPACE,
-            TokenKind::Identifier => SyntaxKind::IDENTIFIER,
-            TokenKind::Unknown => SyntaxKind::ERROR,
-            _ => unreachable!("Unexpected token kind: {:?}", token.kind),
-        };
-
-        self.push(syntax_kind, text, err);
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
-    fn append_literal(&mut self, kind: LiteralKind, suffix_start: Option<usize>, text: &str) {
-        let mut err = None::<&str>;
-        let (text, kind) = match kind {
-            LiteralKind::Int { empty, base } => {
-                if empty {
-                    // TODO: Write better error message
-                    err = Some("Empty integer literal.");
-                }
+    pub fn kind(&self, index: usize) -> SyntaxKind {
+        assert!(index < self.len());
 
-                if base != Base::Decimal {
-                    let (prefix, text) = text.split_at(2);
-
-                    self.push(SyntaxKind::INT_LITERAL_PREFIX, prefix, None);
-
-                    (text, SyntaxKind::INT_LITERAL)
-                } else {
-                    (text, SyntaxKind::INT_LITERAL)
-                }
-            }
-            LiteralKind::Float { empty_exponent, .. } => {
-                if empty_exponent {
-                    err = Some("Empty exponent in float literal.");
-                }
-
-                (text, SyntaxKind::FLOAT_LITERAL)
-            }
-            LiteralKind::Char { terminated, .. } => {
-                if !terminated {
-                    err = Some("Missing trailing ' required to terminate a char literal.");
-                }
-
-                (text, SyntaxKind::CHAR_LITERAL)
-            }
-            LiteralKind::String { terminated, .. } => {
-                if !terminated {
-                    err = Some(r#"Missing trailing " required to terminate a string literal."#);
-                }
-
-                (text, SyntaxKind::STRING_LITERAL)
-            }
-            LiteralKind::StringPart { terminated, .. } => {
-                if !terminated {
-                    err = Some(r#"Missing trailing " required to terminate a string literal."#);
-                }
-
-                (text, SyntaxKind::STRING_LITERAL)
-            }
-        };
-
-        let Some(suffix_start) = suffix_start else {
-            self.push(kind, text, err);
-            return;
-        };
-
-        let (literal, suffix) = text.split_at(suffix_start);
-        self.push(kind, literal, err);
-        self.push(SyntaxKind::IDENTIFIER, suffix, None);
+        self.kinds[index]
     }
 
-    fn push(&mut self, kind: SyntaxKind, text: &str, err: Option<&str>) {
-        let token_range = self.offset..self.offset + text.len();
-        self.result.kinds.push(kind);
-        self.result.tokens.push(token_range.clone());
-        self.offset += text.len();
+    pub fn text(&self, index: usize) -> &'a str {
+        assert!(index < self.len());
 
-        if let Some(err) = err {
-            self.result.errors.push(LexerError { message: err.to_string(), token: token_range });
-        }
+        &self.text[self.tokens[index].clone()]
+    }
+
+    pub fn error(&self, index: usize) -> Option<&str> {
+        assert!(index < self.len());
+
+        let err = self.errors.binary_search_by_key(&index, |err| err.index).ok()?;
+
+        Some(&self.errors[err].message)
+    }
+
+    pub fn errors(&self) -> impl Iterator<Item = (usize, &str)> + '_ {
+        self.errors.iter().map(|err| (err.index, err.message.as_str()))
     }
 }
 
 #[derive(Debug)]
 pub struct LexerError {
     pub message: String,
-    pub token: Range<usize>,
+    pub index: usize,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::T;
 
     #[test]
-    fn test_lexer() {
-        let input = "fn main() { 0x5i32 }";
-        let _lexed = dbg!(LexedStr::new(input));
+    fn test_lexer_basic() {
+        let input = "fn main() { 5.0e10 }";
+        let expected = vec![
+            SyntaxKind::IDENTIFIER,
+            SyntaxKind::WHITESPACE,
+            SyntaxKind::IDENTIFIER,
+            T!["("],
+            T![")"],
+            SyntaxKind::WHITESPACE,
+            T!["{"],
+            SyntaxKind::WHITESPACE,
+            SyntaxKind::FLOAT_LITERAL,
+            SyntaxKind::WHITESPACE,
+            T!["}"],
+            SyntaxKind::EOF,
+        ];
+
+        let lexed = LexedStr::new(input);
+
+        assert_eq!(expected, lexed.kinds);
+    }
+
+    #[test]
+    fn test_lexer_compound_literal() {
+        let input = "0o8i32";
+        let expected = vec![
+            SyntaxKind::INT_LITERAL_PREFIX,
+            SyntaxKind::INT_LITERAL,
+            SyntaxKind::IDENTIFIER,
+            SyntaxKind::EOF,
+        ];
+
+        let lexed = LexedStr::new(input);
+
+        assert_eq!(expected, lexed.kinds);
+    }
+
+    #[test]
+    fn test_lexer_unterminated_string() {
+        let input = r#""test"#;
+        let expected_kinds = vec![SyntaxKind::STRING_LITERAL, SyntaxKind::EOF];
+        let expected_errors =
+            vec![(0, r#"Missing trailing " required to terminate a string literal."#)];
+
+        let lexed = LexedStr::new(input);
+
+        assert_eq!(expected_kinds, lexed.kinds);
+        assert_eq!(expected_errors, lexed.errors().collect::<Vec<_>>());
     }
 }

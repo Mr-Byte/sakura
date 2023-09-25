@@ -1,12 +1,22 @@
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Token {
-    pub kind: TokenKind,
-    pub len: usize,
+    kind: TokenKind,
+    len: usize,
 }
 
 impl Token {
     pub(crate) fn new(kind: TokenKind, len: usize) -> Token {
         Token { kind, len }
+    }
+
+    #[inline]
+    pub fn kind(&self) -> TokenKind {
+        self.kind
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
     }
 }
 
