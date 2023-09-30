@@ -126,6 +126,7 @@ fn get_enums(
                     fn can_cast(kind: SyntaxKind) -> bool {
                         matches!(kind, #(#kinds)|*)
                     }
+
                     fn cast(syntax: SyntaxNode) -> Option<Self> {
                         let res = match syntax.kind() {
                             #(
@@ -135,6 +136,7 @@ fn get_enums(
                         };
                         Some(res)
                     }
+
                     fn syntax(&self) -> &SyntaxNode {
                         match self {
                             #(

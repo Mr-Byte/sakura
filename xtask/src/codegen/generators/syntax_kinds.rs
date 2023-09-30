@@ -28,6 +28,11 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>) -> Result<String, CodegenError
             #(#keywords,)*
             #(#literals,)*
             #(#tokens,)*
+
+            //NOTE: Used by TokenSet to ensure it can't be used to store nodes.
+            #[doc(hidden)]
+            __TOKEN_SENTINEL,
+
             #(#nodes,)*
 
             // NOTE: Kind used to help enable u16 casting.
