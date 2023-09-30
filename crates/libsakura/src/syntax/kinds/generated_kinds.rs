@@ -85,6 +85,8 @@ pub enum SyntaxKind {
     LINE_COMMENT,
     BLOCK_COMMENT,
     INT_LITERAL_PREFIX,
+    #[doc(hidden)]
+    __TOKEN_SENTINEL,
     SOURCE_FILE,
     NAME,
     LITERAL,

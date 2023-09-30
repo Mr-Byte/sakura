@@ -117,4 +117,61 @@ mod tests {
         assert_eq!(expected_kinds, lexed.kinds);
         assert_eq!(expected_errors, lexed.errors().collect::<Vec<_>>());
     }
+
+    #[test]
+    fn test_lexer_unterminated_interpolated_string() {
+        let input = r#""$test"#;
+        let expected_kinds = vec![
+            SyntaxKind::STRING_LITERAL,
+            T!["$"],
+            SyntaxKind::IDENTIFIER,
+            SyntaxKind::STRING_LITERAL,
+            SyntaxKind::EOF,
+        ];
+        let expected_errors =
+            vec![(3, r#"Missing trailing " required to terminate a string literal."#)];
+
+        let lexed = LexedStr::new(input);
+
+        assert_eq!(expected_kinds, lexed.kinds);
+        assert_eq!(expected_errors, lexed.errors().collect::<Vec<_>>());
+
+        let text = lexed.text(3);
+        assert_eq!(text, "");
+    }
+
+    #[test]
+    fn test_lexer_unclosed_expression_slot() {
+        let input = r#""${test"#;
+        let expected_kinds = vec![
+            SyntaxKind::STRING_LITERAL,
+            T!["$"],
+            SyntaxKind::LEFT_CURLY,
+            SyntaxKind::IDENTIFIER,
+            SyntaxKind::EOF,
+        ];
+
+        let lexed = LexedStr::new(input);
+
+        assert_eq!(expected_kinds, lexed.kinds);
+        assert!(lexed.errors().collect::<Vec<_>>().is_empty());
+    }
+
+    #[test]
+    fn test_lexer_float_field_access() {
+        let input = r#"5.0.test()"#;
+        let expected_kinds = vec![
+            SyntaxKind::FLOAT_LITERAL,
+            SyntaxKind::DOT,
+            SyntaxKind::IDENTIFIER,
+            T!["("],
+            T![")"],
+            SyntaxKind::EOF,
+        ];
+
+        let lexed = LexedStr::new(input);
+
+        assert_eq!(expected_kinds, lexed.kinds);
+        assert!(lexed.errors().collect::<Vec<_>>().is_empty());
+    }
 }

@@ -47,7 +47,7 @@ impl Tokenizer<'_> {
     fn next_token(&mut self) -> Option<Token> {
         let kind = match self.mode_stack.last() {
             None | Some(TokenizerMode::Default) => self.next_token_default()?,
-            Some(TokenizerMode::InterpolatedString) => self.next_token_interpolated_string()?,
+            Some(TokenizerMode::InterpolatedString) => self.next_token_interpolated_string(),
         };
 
         let token = Token::new(kind, self.cursor.consumed_len());
@@ -112,8 +112,8 @@ impl Tokenizer<'_> {
     }
 
     /// Scan tokens that are part of interpolated strings as represented by the `InterpolatedString` state.
-    fn next_token_interpolated_string(&mut self) -> Option<TokenKind> {
-        let kind = match self.cursor.first() {
+    fn next_token_interpolated_string(&mut self) -> TokenKind {
+        match self.cursor.first() {
             '$' => {
                 self.cursor.bump();
 
@@ -133,12 +133,13 @@ impl Tokenizer<'_> {
                 let mode = self.mode_stack.pop();
                 debug_assert_eq!(Some(TokenizerMode::InterpolatedString), mode);
 
-                return None;
+                return Literal {
+                    kind: LiteralKind::StringPart { terminated: false },
+                    suffix_start: None,
+                };
             }
             _ => self.scan_double_quoted_string(),
-        };
-
-        Some(kind)
+        }
     }
 }
 
@@ -445,6 +446,22 @@ mod test {
             Literal { kind: LiteralKind::String { terminated: true }, suffix_start: None },
             tokens[3].kind()
         );
+    }
+
+    #[test]
+    fn tokenizes_unterminated_interpolated_quoted_string() {
+        let input = r#""$test"#;
+        let tokens = tokenize(input).collect::<Vec<_>>();
+        let open_expected =
+            Literal { kind: LiteralKind::StringPart { terminated: true }, suffix_start: None };
+        let close_expected =
+            Literal { kind: LiteralKind::StringPart { terminated: false }, suffix_start: None };
+
+        assert_eq!(4, tokens.len());
+        assert_eq!(open_expected, tokens[0].kind());
+        assert_eq!(Dollar, tokens[1].kind());
+        assert_eq!(Identifier, tokens[2].kind());
+        assert_eq!(close_expected, tokens[3].kind());
     }
 
     #[test]

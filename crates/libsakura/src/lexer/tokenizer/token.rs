@@ -74,7 +74,6 @@ pub enum TokenKind {
     Tilde,
     /// %
     Percent,
-
     LineComment,
     BlockComment {
         terminated: bool,
