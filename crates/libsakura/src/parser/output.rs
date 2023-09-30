@@ -43,19 +43,19 @@ impl ParserOutput {
         })
     }
 
-    pub(crate) fn append_token(&mut self, kind: SyntaxKind, input_token_count: u8) {
+    pub(in crate::parser) fn append_token(&mut self, kind: SyntaxKind, input_token_count: u8) {
         self.events.push(OutputEvent::Token { kind, input_token_count });
     }
 
-    pub(crate) fn enter_node(&mut self, kind: SyntaxKind) {
+    pub(in crate::parser) fn enter_node(&mut self, kind: SyntaxKind) {
         self.events.push(OutputEvent::Enter { kind });
     }
 
-    pub(crate) fn exit_node(&mut self) {
+    pub(in crate::parser) fn exit_node(&mut self) {
         self.events.push(OutputEvent::Exit);
     }
 
-    pub(crate) fn append_error(&mut self, message: String) {
+    pub(in crate::parser) fn append_error(&mut self, message: String) {
         let index = self.errors.len();
 
         self.errors.push(message);

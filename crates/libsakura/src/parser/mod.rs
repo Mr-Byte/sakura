@@ -1,5 +1,6 @@
 mod event;
 mod input;
+mod marker;
 mod output;
 mod parser;
 

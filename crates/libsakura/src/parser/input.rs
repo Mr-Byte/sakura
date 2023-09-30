@@ -38,7 +38,7 @@ pub struct ParserInput {
 }
 
 impl ParserInput {
-    pub(crate) fn kind(&self, index: usize) -> SyntaxKind {
+    pub(in crate::parser) fn kind(&self, index: usize) -> SyntaxKind {
         self.kinds.get(index).copied().unwrap_or(SyntaxKind::EOF)
     }
 

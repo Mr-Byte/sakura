@@ -17,12 +17,12 @@ pub enum Event {
 }
 
 impl Event {
-    pub(crate) fn tombstone() -> Self {
+    pub(in crate::parser) fn tombstone() -> Self {
         Event::Start { kind: SyntaxKind::TOMBSTONE }
     }
 }
 
-pub(super) fn process(mut events: Vec<Event>) -> ParserOutput {
+pub(in crate::parser) fn process(mut events: Vec<Event>) -> ParserOutput {
     let mut output = ParserOutput::default();
 
     for index in 0..events.len() {

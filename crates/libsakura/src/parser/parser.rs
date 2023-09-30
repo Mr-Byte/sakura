@@ -1,18 +1,26 @@
 use crate::parser::event::Event;
 use crate::parser::input::ParserInput;
+use crate::parser::marker::Marker;
 use crate::syntax::{SyntaxKind, TokenSet};
 use crate::T;
 
 pub(crate) struct Parser<'a> {
     input: &'a ParserInput,
     position: usize,
-    events: Vec<Event>,
+    pub(super) events: Vec<Event>,
 }
 
 /// Public methods.
 impl<'a> Parser<'a> {
     pub fn new(input: &'a ParserInput) -> Parser<'a> {
         Parser { input, position: 0, events: Vec::new() }
+    }
+
+    pub(in crate::parser) fn start_node(&mut self) -> Marker {
+        let position = self.events.len();
+        self.push_event(Event::tombstone());
+
+        Marker::new(position)
     }
 
     pub fn finish(self) -> Vec<Event> {
@@ -22,11 +30,11 @@ impl<'a> Parser<'a> {
 
 /// Methods for consuming token kinds.
 impl<'a> Parser<'a> {
-    pub(crate) fn bump(&mut self, kind: SyntaxKind) {
+    pub(in crate::parser) fn bump(&mut self, kind: SyntaxKind) {
         assert!(self.eat(kind));
     }
 
-    pub(crate) fn eat(&mut self, kind: SyntaxKind) -> bool {
+    pub(in crate::parser) fn eat(&mut self, kind: SyntaxKind) -> bool {
         if !self.at(kind) {
             return false;
         }
@@ -59,7 +67,16 @@ impl<'a> Parser<'a> {
         true
     }
 
-    pub(crate) fn bump_any(&mut self) {
+    pub(in crate::parser) fn expect(&mut self, kind: SyntaxKind) -> bool {
+        if self.eat(kind) {
+            return true;
+        }
+
+        self.error(format!("expected {:?}", kind));
+        false
+    }
+
+    pub(in crate::parser) fn bump_any(&mut self) {
         let kind = self.nth(0);
 
         if kind == SyntaxKind::EOF {
@@ -71,17 +88,21 @@ impl<'a> Parser<'a> {
 
     fn do_bump(&mut self, kind: SyntaxKind, raw_token_count: u8) {
         self.position += raw_token_count as usize;
-        self.events.push(Event::Token { kind, raw_token_count });
+        self.push_event(Event::Token { kind, raw_token_count });
+    }
+
+    pub(in crate::parser) fn push_event(&mut self, event: Event) {
+        self.events.push(event);
     }
 }
 
 /// Methods for retrieving syntax kinds.
 impl<'a> Parser<'a> {
-    pub(crate) fn current(&self) -> SyntaxKind {
+    pub(in crate::parser) fn current(&self) -> SyntaxKind {
         self.nth(0)
     }
 
-    pub(crate) fn nth(&self, n: usize) -> SyntaxKind {
+    pub(in crate::parser) fn nth(&self, n: usize) -> SyntaxKind {
         assert!(n < 3);
 
         self.input.kind(self.position + n)
@@ -90,15 +111,15 @@ impl<'a> Parser<'a> {
 
 /// Methods for checking syntax kinds.
 impl<'a> Parser<'a> {
-    pub(crate) fn at(&self, kind: SyntaxKind) -> bool {
+    pub(in crate::parser) fn at(&self, kind: SyntaxKind) -> bool {
         self.nth_at(0, kind)
     }
 
-    pub(crate) fn at_token_set(&self, kinds: TokenSet) -> bool {
+    pub(in crate::parser) fn at_token_set(&self, kinds: TokenSet) -> bool {
         kinds.contains(self.current())
     }
 
-    pub(crate) fn nth_at(&self, n: usize, kind: SyntaxKind) -> bool {
+    pub(in crate::parser) fn nth_at(&self, n: usize, kind: SyntaxKind) -> bool {
         match kind {
             T![".."] => self.at_composite2(n, T!["."], T!["."]),
             T!["+="] => self.at_composite2(n, T!["+"], T!["="]),
@@ -132,13 +153,18 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(crate) fn at_composite2(&self, n: usize, first: SyntaxKind, second: SyntaxKind) -> bool {
+    pub(in crate::parser) fn at_composite2(
+        &self,
+        n: usize,
+        first: SyntaxKind,
+        second: SyntaxKind,
+    ) -> bool {
         self.input.kind(self.position + n) == first
             && self.input.kind(self.position + n + 1) == second
             && self.input.is_joint(self.position + n)
     }
 
-    pub(crate) fn at_composite3(
+    pub(in crate::parser) fn at_composite3(
         &self,
         n: usize,
         first: SyntaxKind,
@@ -153,10 +179,39 @@ impl<'a> Parser<'a> {
     }
 }
 
+/// Methods for error handling.
+impl Parser<'_> {
+    pub(in crate::parser) fn error(&mut self, message: impl Into<String>) {
+        self.push_event(Event::Error { message: message.into() });
+    }
+
+    pub(in crate::parser) fn error_recover(&mut self, message: &str, recovery_set: TokenSet) {
+        if let T!["{"] | T!["}"] = self.current() {
+            self.error(message);
+            return;
+        }
+
+        if self.at_token_set(recovery_set) {
+            self.error(message);
+            return;
+        }
+
+        let marker = self.start_node();
+        self.error(message);
+        self.bump_any();
+        marker.complete(self, SyntaxKind::ERROR);
+    }
+
+    pub(in crate::parser) fn error_and_bump(&mut self, message: &str) {
+        self.error_recover(message, TokenSet::EMPTY);
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::lexer::LexedStr;
     use crate::parser::input::ParserInput;
+    use crate::syntax::SyntaxKind;
     use crate::T;
 
     #[test]
@@ -213,5 +268,15 @@ mod test {
         assert!(parser.nth_at(40, T![">>="]));
         assert!(parser.nth_at(43, T!["-"]));
         assert!(parser.nth_at(44, T!["="]));
+    }
+
+    #[test]
+    fn eat_processes_joint_token() {
+        let tokens = LexedStr::new("-=");
+        let input: ParserInput = tokens.into();
+        let mut parser = super::Parser::new(&input);
+
+        assert!(parser.eat(T!["-="]));
+        assert_eq!(parser.current(), SyntaxKind::EOF);
     }
 }
