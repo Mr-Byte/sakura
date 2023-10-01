@@ -27,7 +27,7 @@ impl Marker {
         self.drop_bomb.defuse();
 
         let index = self.position;
-        let Event::Start { kind: start_kind } = &mut parser.events[index] else {
+        let Event::Start { kind: start_kind, .. } = &mut parser.events[index] else {
             unreachable!();
         };
 
@@ -41,7 +41,7 @@ impl Marker {
         self.drop_bomb.defuse();
 
         let index = self.position;
-        let Event::Start { kind } = &mut parser.events[index] else {
+        let Event::Start { kind, .. } = &mut parser.events[index] else {
             unreachable!();
         };
 
@@ -55,6 +55,35 @@ pub(in crate::parser) struct CompletedMarker {
 }
 
 impl CompletedMarker {
+    pub(in crate::parser) fn precede(self, parser: &mut Parser<'_>) -> Marker {
+        let new_position = parser.start_node();
+        let index = self.position;
+        let Event::Start { forward_parent, .. } = &mut parser.events[index] else {
+            unreachable!();
+        };
+
+        *forward_parent = Some(new_position.position - self.position);
+
+        new_position
+    }
+
+    pub(in crate::parser) fn extend_to(
+        self,
+        parser: &mut Parser<'_>,
+        mut marker: Marker,
+    ) -> CompletedMarker {
+        marker.drop_bomb.defuse();
+
+        let index = marker.position;
+        let Event::Start { forward_parent, .. } = &mut parser.events[index] else {
+            unreachable!();
+        };
+
+        *forward_parent = Some(self.position - marker.position);
+
+        self
+    }
+
     pub(in crate::parser) fn kind(&self) -> SyntaxKind {
         self.kind
     }
@@ -90,7 +119,7 @@ mod test {
         let finished = parser.finish();
 
         assert_eq!(completed.kind(), SyntaxKind::TYPE_DEFINITION);
-        assert!(matches!(finished[0], Event::Start { kind: SyntaxKind::TYPE_DEFINITION }));
+        assert!(matches!(finished[0], Event::Start { kind: SyntaxKind::TYPE_DEFINITION, .. }));
         assert!(matches!(finished[1], Event::Token { kind: SyntaxKind::IDENTIFIER, .. }));
         assert!(matches!(finished[2], Event::Finish));
     }
@@ -106,7 +135,7 @@ mod test {
         marker.abandon(&mut parser);
         let finished = parser.finish();
 
-        assert!(matches!(finished[0], Event::Start { kind: SyntaxKind::TOMBSTONE }));
+        assert!(matches!(finished[0], Event::Start { kind: SyntaxKind::TOMBSTONE, .. }));
         assert!(matches!(finished[1], Event::Token { kind: SyntaxKind::IDENTIFIER, .. }));
     }
 }

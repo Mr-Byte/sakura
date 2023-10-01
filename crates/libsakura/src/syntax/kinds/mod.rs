@@ -2,7 +2,7 @@ mod generated_kinds;
 mod token_set;
 
 pub use generated_kinds::*;
-pub use token_set::*;
+pub(crate) use token_set::*;
 
 impl From<u16> for SyntaxKind {
     #[inline]
