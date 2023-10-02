@@ -71,7 +71,7 @@ mod tests {
     fn test_lexer_basic() {
         let input = "fn main() { 5.0e10 }";
         let expected = vec![
-            SyntaxKind::IDENTIFIER,
+            SyntaxKind::FN_KW,
             SyntaxKind::WHITESPACE,
             SyntaxKind::IDENTIFIER,
             T!["("],

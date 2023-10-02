@@ -27,13 +27,27 @@ impl<'a> TokenConverter<'a> {
     }
 
     fn append_token(&mut self, token: Token, text: &str) {
-        if let TokenKind::Literal { kind, suffix_start } = token.kind() {
-            self.append_literal(kind, suffix_start, text);
-            return;
-        }
-
         let mut err = None::<&str>;
         let syntax_kind = match token.kind() {
+            TokenKind::LineComment => SyntaxKind::LINE_COMMENT,
+            TokenKind::BlockComment { terminated } if terminated => {
+                err = Some("Missing trailing */ required to terminate a block comment.");
+                SyntaxKind::BLOCK_COMMENT
+            }
+            TokenKind::BlockComment { .. } => SyntaxKind::BLOCK_COMMENT,
+
+            TokenKind::Whitespace => SyntaxKind::WHITESPACE,
+
+            TokenKind::Identifier if text == "_" => SyntaxKind::UNDERSCORE,
+            TokenKind::Identifier => {
+                SyntaxKind::from_keyword(text).unwrap_or(SyntaxKind::IDENTIFIER)
+            }
+
+            TokenKind::Literal { kind, suffix_start } => {
+                self.append_literal(kind, suffix_start, text);
+                return;
+            }
+
             TokenKind::Comma => T![","],
             TokenKind::Dot => T!["."],
             TokenKind::OpenParen => T!["("],
@@ -60,14 +74,6 @@ impl<'a> TokenConverter<'a> {
             TokenKind::Caret => T!["^"],
             TokenKind::Tilde => T!["~"],
             TokenKind::Percent => T!["%"],
-            TokenKind::LineComment => SyntaxKind::LINE_COMMENT,
-            TokenKind::BlockComment { terminated } if terminated => {
-                err = Some("Missing trailing */ required to terminate a block comment.");
-                SyntaxKind::BLOCK_COMMENT
-            }
-            TokenKind::BlockComment { .. } => SyntaxKind::BLOCK_COMMENT,
-            TokenKind::Whitespace => SyntaxKind::WHITESPACE,
-            TokenKind::Identifier => SyntaxKind::IDENTIFIER,
             TokenKind::Unknown => SyntaxKind::ERROR,
             _ => unreachable!("Unexpected token kind: {:?}", token.kind()),
         };

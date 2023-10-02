@@ -32,6 +32,7 @@ pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
         ("!", "BANG"),
         ("?", "QUESTION"),
         ("$", "DOLLAR"),
+        ("_", "UNDERSCORE"),
         ("**", "DOUBLE_STAR"),
         ("..", "DOUBLE_DOT"),
         ("..=", "DOUBLE_DOT_EQUAL"),
@@ -57,7 +58,10 @@ pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
         ("<<=", "SHIFT_LEFT_EQUAL"),
         (">>=", "SHIFT_RIGHT_EQUAL"),
     ],
-    keywords: &["type", "struct", "enum", "trait", "let", "mut", "fn", "true", "false"],
+    keywords: &[
+        "type", "struct", "enum", "trait", "val", "var", "const", "using", "extend", "import",
+        "export", "fn", "true", "false",
+    ],
     literals: &[
         "INT_LITERAL",
         "FLOAT_LITERAL",

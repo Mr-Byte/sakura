@@ -42,6 +42,10 @@ pub(in crate::parser) fn process(mut events: Vec<Event>) -> ParserOutput {
                 }
 
                 for kind in forward_parents.drain(..).rev() {
+                    if kind == SyntaxKind::TOMBSTONE {
+                        continue;
+                    }
+
                     output.enter_node(kind);
                 }
             }

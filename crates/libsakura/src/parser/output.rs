@@ -15,7 +15,7 @@ enum OutputEvent {
 // Assertion to ensure that OutputEvent stays 32-bits in length.
 const __OUTPUT_EVENT_SIZE_ASSERT: () = assert!(std::mem::size_of::<OutputEvent>() == 4);
 
-pub enum OutputStep<'a> {
+pub enum ParserOutputStep<'a> {
     Enter { kind: SyntaxKind },
     Token { kind: SyntaxKind, input_token_count: u8 },
     Exit,
@@ -29,16 +29,16 @@ pub struct ParserOutput {
 }
 
 impl ParserOutput {
-    pub fn iter(&self) -> impl Iterator<Item = OutputStep<'_>> {
+    pub fn iter(&self) -> impl Iterator<Item = ParserOutputStep<'_>> {
         self.events.iter().map(|event| match event {
-            OutputEvent::Enter { kind } => OutputStep::Enter { kind: *kind },
+            OutputEvent::Enter { kind } => ParserOutputStep::Enter { kind: *kind },
             OutputEvent::Token { kind, input_token_count } => {
-                OutputStep::Token { kind: *kind, input_token_count: *input_token_count }
+                ParserOutputStep::Token { kind: *kind, input_token_count: *input_token_count }
             }
-            OutputEvent::Exit => OutputStep::Exit,
+            OutputEvent::Exit => ParserOutputStep::Exit,
             OutputEvent::ErrorIndex(index) => {
                 let message = &self.errors[*index as usize];
-                OutputStep::Error { message }
+                ParserOutputStep::Error { message }
             }
         })
     }
