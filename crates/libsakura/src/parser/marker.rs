@@ -101,7 +101,7 @@ mod test {
     #[should_panic]
     fn marker_should_panic_when_dropped() {
         let input = LexedStr::new("test");
-        let input: ParserInput = input.into();
+        let input: ParserInput = input.as_input();
         let mut parser = Parser::new(&input);
 
         drop(parser.start_node());
@@ -110,16 +110,16 @@ mod test {
     #[test]
     fn marker_updates_start_event_on_complete() {
         let input = LexedStr::new("test");
-        let input: ParserInput = input.into();
+        let input: ParserInput = input.as_input();
         let mut parser = Parser::new(&input);
 
         let marker = parser.start_node();
         parser.eat(SyntaxKind::IDENTIFIER);
-        let completed = marker.complete(&mut parser, SyntaxKind::TYPE_DEFINITION);
+        let completed = marker.complete(&mut parser, SyntaxKind::TYPE_DECLARATION);
         let finished = parser.finish();
 
-        assert_eq!(completed.kind(), SyntaxKind::TYPE_DEFINITION);
-        assert!(matches!(finished[0], Event::Start { kind: SyntaxKind::TYPE_DEFINITION, .. }));
+        assert_eq!(completed.kind(), SyntaxKind::TYPE_DECLARATION);
+        assert!(matches!(finished[0], Event::Start { kind: SyntaxKind::TYPE_DECLARATION, .. }));
         assert!(matches!(finished[1], Event::Token { kind: SyntaxKind::IDENTIFIER, .. }));
         assert!(matches!(finished[2], Event::Finish));
     }
@@ -127,7 +127,7 @@ mod test {
     #[test]
     fn marker_doesnt_update_start_event_on_abandon() {
         let input = LexedStr::new("test");
-        let input: ParserInput = input.into();
+        let input: ParserInput = input.as_input();
         let mut parser = Parser::new(&input);
 
         let marker = parser.start_node();

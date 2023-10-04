@@ -43,7 +43,7 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn type_definition(&self) -> Option<TypeDefinition> {
+    pub fn type_declaration(&self) -> Option<TypeDeclaration> {
         support::child(&self.syntax)
     }
 }
@@ -67,11 +67,11 @@ impl AstNode for Item {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TypeDefinition {
+pub struct TypeDeclaration {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl TypeDefinition {
+impl TypeDeclaration {
     pub fn type_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!["type"])
     }
@@ -80,18 +80,26 @@ impl TypeDefinition {
         support::child(&self.syntax)
     }
 
+    pub fn generic_parameter_list(&self) -> Option<GenericParameterList> {
+        support::child(&self.syntax)
+    }
+
+    pub fn constraint_list(&self) -> Option<ConstraintList> {
+        support::child(&self.syntax)
+    }
+
     pub fn equal_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!["="])
     }
 
-    pub fn body(&self) -> Option<Type> {
+    pub fn body(&self) -> Option<AnonymousType> {
         support::child(&self.syntax)
     }
 }
 
-impl AstNode for TypeDefinition {
+impl AstNode for TypeDeclaration {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TYPE_DEFINITION
+        kind == TYPE_DECLARATION
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -137,6 +145,72 @@ impl AstNode for Name {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct GenericParameterList {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl GenericParameterList {
+    pub fn left_bracket_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["["])
+    }
+
+    pub fn params(&self) -> AstChildren<Name> {
+        support::children(&self.syntax)
+    }
+
+    pub fn right_bracket_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["]"])
+    }
+}
+
+impl AstNode for GenericParameterList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == GENERIC_PARAMETER_LIST
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ConstraintList {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl ConstraintList {
+    pub fn constraints(&self) -> AstChildren<Constraint> {
+        support::children(&self.syntax)
+    }
+}
+
+impl AstNode for ConstraintList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == CONSTRAINT_LIST
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub(crate) syntax: SyntaxNode,
 }
@@ -146,7 +220,7 @@ impl StructType {
         support::token(&self.syntax, T!["struct"])
     }
 
-    pub fn body(&self) -> Option<StructFieldDefinitionList> {
+    pub fn body(&self) -> Option<StructFieldList> {
         support::child(&self.syntax)
     }
 }
@@ -240,19 +314,27 @@ impl AstNode for TraitType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TypeList {
+pub struct NamedType {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl TypeList {
-    pub fn types(&self) -> AstChildren<Type> {
-        support::children(&self.syntax)
+impl NamedType {
+    pub fn box_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["box"])
+    }
+
+    pub fn name(&self) -> Option<Name> {
+        support::child(&self.syntax)
+    }
+
+    pub fn generic_argument_list(&self) -> Option<GenericArgumentList> {
+        support::child(&self.syntax)
     }
 }
 
-impl AstNode for TypeList {
+impl AstNode for NamedType {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == TYPE_LIST
+        kind == NAMED_TYPE
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -269,11 +351,77 @@ impl AstNode for TypeList {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StructFieldDefinitionList {
+pub struct GenericArgumentList {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl StructFieldDefinitionList {
+impl GenericArgumentList {
+    pub fn left_bracket_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["["])
+    }
+
+    pub fn types(&self) -> AstChildren<NamedType> {
+        support::children(&self.syntax)
+    }
+
+    pub fn right_bracket_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["]"])
+    }
+}
+
+impl AstNode for GenericArgumentList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == GENERIC_ARGUMENT_LIST
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct NamedTypeList {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl NamedTypeList {
+    pub fn types(&self) -> AstChildren<NamedType> {
+        support::children(&self.syntax)
+    }
+}
+
+impl AstNode for NamedTypeList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == NAMED_TYPE_LIST
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct StructFieldList {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl StructFieldList {
     pub fn left_curly_token(&self) -> Option<SyntaxToken> {
         support::token(&self.syntax, T!["{"])
     }
@@ -287,9 +435,9 @@ impl StructFieldDefinitionList {
     }
 }
 
-impl AstNode for StructFieldDefinitionList {
+impl AstNode for StructFieldList {
     fn can_cast(kind: SyntaxKind) -> bool {
-        kind == STRUCT_FIELD_DEFINITION_LIST
+        kind == STRUCT_FIELD_LIST
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -479,6 +627,76 @@ impl AstNode for EnumVariantBodyExpr {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TypeList {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl TypeList {
+    pub fn types(&self) -> AstChildren<Type> {
+        support::children(&self.syntax)
+    }
+}
+
+impl AstNode for TypeList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TYPE_LIST
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Constraint {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl Constraint {
+    pub fn where_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["where"])
+    }
+
+    pub fn param(&self) -> Option<Name> {
+        support::child(&self.syntax)
+    }
+
+    pub fn colon_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T![":"])
+    }
+
+    pub fn constraints(&self) -> Option<TypeList> {
+        support::child(&self.syntax)
+    }
+}
+
+impl AstNode for Constraint {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == CONSTRAINT
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BinaryExpr {
     pub(crate) syntax: SyntaxNode,
 }
@@ -620,16 +838,66 @@ impl AstNode for InterpolatedStringSlot {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Type {
-    Name(Name),
+pub enum AnonymousType {
     StructType(StructType),
     EnumType(EnumType),
     TraitType(TraitType),
 }
 
-impl From<Name> for Type {
-    fn from(node: Name) -> Type {
-        Type::Name(node)
+impl From<StructType> for AnonymousType {
+    fn from(node: StructType) -> AnonymousType {
+        AnonymousType::StructType(node)
+    }
+}
+
+impl From<EnumType> for AnonymousType {
+    fn from(node: EnumType) -> AnonymousType {
+        AnonymousType::EnumType(node)
+    }
+}
+
+impl From<TraitType> for AnonymousType {
+    fn from(node: TraitType) -> AnonymousType {
+        AnonymousType::TraitType(node)
+    }
+}
+
+impl AstNode for AnonymousType {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        matches!(kind, STRUCT_TYPE | ENUM_TYPE | TRAIT_TYPE)
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        let res = match syntax.kind() {
+            STRUCT_TYPE => AnonymousType::StructType(StructType { syntax }),
+            ENUM_TYPE => AnonymousType::EnumType(EnumType { syntax }),
+            TRAIT_TYPE => AnonymousType::TraitType(TraitType { syntax }),
+            _ => return None,
+        };
+
+        Some(res)
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            AnonymousType::StructType(it) => it.syntax(),
+            AnonymousType::EnumType(it) => it.syntax(),
+            AnonymousType::TraitType(it) => it.syntax(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Type {
+    NamedType(NamedType),
+    StructType(StructType),
+    EnumType(EnumType),
+    TraitType(TraitType),
+}
+
+impl From<NamedType> for Type {
+    fn from(node: NamedType) -> Type {
+        Type::NamedType(node)
     }
 }
 
@@ -653,12 +921,12 @@ impl From<TraitType> for Type {
 
 impl AstNode for Type {
     fn can_cast(kind: SyntaxKind) -> bool {
-        matches!(kind, NAME | STRUCT_TYPE | ENUM_TYPE | TRAIT_TYPE)
+        matches!(kind, NAMED_TYPE | STRUCT_TYPE | ENUM_TYPE | TRAIT_TYPE)
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         let res = match syntax.kind() {
-            NAME => Type::Name(Name { syntax }),
+            NAMED_TYPE => Type::NamedType(NamedType { syntax }),
             STRUCT_TYPE => Type::StructType(StructType { syntax }),
             ENUM_TYPE => Type::EnumType(EnumType { syntax }),
             TRAIT_TYPE => Type::TraitType(TraitType { syntax }),
@@ -670,7 +938,7 @@ impl AstNode for Type {
 
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            Type::Name(it) => it.syntax(),
+            Type::NamedType(it) => it.syntax(),
             Type::StructType(it) => it.syntax(),
             Type::EnumType(it) => it.syntax(),
             Type::TraitType(it) => it.syntax(),

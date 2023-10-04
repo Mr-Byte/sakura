@@ -4,15 +4,16 @@ use crate::parser::marker::Marker;
 use crate::syntax::{SyntaxKind, TokenSet};
 use crate::T;
 
-pub(crate) struct Parser<'a> {
+pub(in crate::parser) struct Parser<'a> {
     input: &'a ParserInput,
     position: usize,
     pub(super) events: Vec<Event>,
+    // TODO: Add parser hang detection.
 }
 
 /// Public methods.
 impl<'a> Parser<'a> {
-    pub fn new(input: &'a ParserInput) -> Parser<'a> {
+    pub(in crate::parser) fn new(input: &'a ParserInput) -> Parser<'a> {
         Parser { input, position: 0, events: Vec::new() }
     }
 
@@ -23,7 +24,7 @@ impl<'a> Parser<'a> {
         Marker::new(position)
     }
 
-    pub fn finish(self) -> Vec<Event> {
+    pub(in crate::parser) fn finish(self) -> Vec<Event> {
         self.events
     }
 }
@@ -117,6 +118,10 @@ impl<'a> Parser<'a> {
 
     pub(in crate::parser) fn at_token_set(&self, kinds: TokenSet) -> bool {
         kinds.contains(self.current())
+    }
+
+    pub(in crate::parser) fn nth_at_token_set(&self, n: usize, kinds: TokenSet) -> bool {
+        kinds.contains(self.nth(n))
     }
 
     pub(in crate::parser) fn nth_at(&self, n: usize, kind: SyntaxKind) -> bool {
@@ -243,7 +248,7 @@ mod test {
             ",
         );
 
-        let input: ParserInput = tokens.into();
+        let input: ParserInput = tokens.as_input();
         let parser = super::Parser::new(&input);
 
         assert!(parser.nth_at(0, T!["-="]));
@@ -273,7 +278,7 @@ mod test {
     #[test]
     fn eat_processes_joint_token() {
         let tokens = LexedStr::new("-=");
-        let input: ParserInput = tokens.into();
+        let input: ParserInput = tokens.as_input();
         let mut parser = super::Parser::new(&input);
 
         assert!(parser.eat(T!["-="]));

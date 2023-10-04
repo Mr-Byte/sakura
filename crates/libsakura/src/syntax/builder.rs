@@ -37,7 +37,7 @@ impl SyntaxTreeBuilder {
         self.inner.finish_node();
     }
 
-    pub fn error(&mut self, _error: String, _text_pos: TextSize) {
-        self.errors.push(SyntaxError);
+    pub fn error(&mut self, error: String, text_size: TextSize) {
+        self.errors.push(SyntaxError::new_at_offset(error, text_size));
     }
 }

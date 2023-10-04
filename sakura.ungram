@@ -2,24 +2,33 @@ SourceFile =
     Item*
 
 Item =
-    TypeDefinition
+    TypeDeclaration
 
-TypeDefinition =
-    'type' Name '=' body:Type
-    
-Type = 
-      Name
+// Types
+TypeDeclaration =
+    'type' Name GenericParameterList? ConstraintList? '=' body:AnonymousType
+
+AnonymousType =
+      StructType
+    | EnumType
+    | TraitType
+
+Type =
+      NamedType
     | StructType
     | EnumType
     | TraitType
 
-TypeList =
-    types:(Type (',' Type)* ','?)?
+NamedType =
+    'box'? Name GenericArgumentList?
+
+NamedTypeList =
+    types:(NamedType (',' NamedType)* ','?)?
 
 StructType =
-    'struct' body:StructFieldDefinitionList
+    'struct' body:StructFieldList
 
-StructFieldDefinitionList =
+StructFieldList =
     '{' 
         fields:(StructField (',' StructField)* ','?)?
     '}'
@@ -51,6 +60,23 @@ EnumVariantBodyExpr =
 TraitType =
     'trait' '{' '}'
 
+TypeList =
+    types:(Type (',' Type)* ','?)?
+
+// Generics
+GenericParameterList =
+    '[' params:(Name (',' Name)* ','?) ']'
+
+GenericArgumentList =
+    '[' types:(NamedType (',' NamedType)* ','?)? ']'
+
+ConstraintList =
+    Constraint*
+
+Constraint =
+    'where' param:Name ':' constraints:TypeList
+
+// Expressions
 Expr =
       BinaryExpr
     | InterpolatedString

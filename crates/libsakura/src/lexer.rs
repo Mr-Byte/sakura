@@ -10,7 +10,7 @@ pub mod tokenizer;
 pub struct LexedStr<'a> {
     text: &'a str,
     kinds: Vec<SyntaxKind>,
-    tokens: Vec<Range<usize>>,
+    token_starts: Vec<usize>,
     errors: Vec<LexerError>,
 }
 
@@ -37,10 +37,28 @@ impl<'a> LexedStr<'a> {
         self.kinds[index]
     }
 
-    pub fn text(&self, index: usize) -> &'a str {
+    pub fn text(&self, index: usize) -> &str {
         assert!(index < self.len());
 
-        &self.text[self.tokens[index].clone()]
+        self.text_from_range(index..index + 1)
+    }
+
+    pub fn text_from_range(&self, range: Range<usize>) -> &str {
+        assert!(range.start < range.end && range.end <= self.len());
+
+        let start = self.token_starts[range.start];
+        let end = self.token_starts[range.end];
+
+        &self.text[start..end]
+    }
+
+    pub fn text_range(&self, index: usize) -> Range<usize> {
+        assert!(index < self.len());
+
+        let start = self.token_starts[index];
+        let end = self.token_starts[index + 1];
+
+        start..end
     }
 
     pub fn error(&self, index: usize) -> Option<&str> {

@@ -42,18 +42,18 @@ impl ParserInput {
         self.kinds.get(index).copied().unwrap_or(SyntaxKind::EOF)
     }
 
-    pub(crate) fn is_joint(&self, index: usize) -> bool {
+    pub(in crate::parser) fn is_joint(&self, index: usize) -> bool {
         self.joint[index]
     }
 }
 
-impl From<LexedStr<'_>> for ParserInput {
-    fn from(lexed: LexedStr<'_>) -> Self {
+impl LexedStr<'_> {
+    pub(crate) fn as_input(&self) -> ParserInput {
         let mut builder = ParserInputBuilder::default();
 
         let mut is_joint = false;
-        for index in 0..lexed.len() {
-            let kind = lexed.kind(index);
+        for index in 0..self.len() {
+            let kind = self.kind(index);
 
             if kind.is_trivia() {
                 is_joint = false;

@@ -1,9 +1,9 @@
-pub(crate) struct SyntaxKindsSrc<'a> {
-    pub(crate) punctuation: &'a [(&'a str, &'a str)],
-    pub(crate) keywords: &'a [&'a str],
-    pub(crate) literals: &'a [&'a str],
-    pub(crate) tokens: &'a [&'a str],
-    pub(crate) nodes: &'a [&'a str],
+pub(crate) struct SyntaxKindsSrc<'src> {
+    pub(crate) punctuation: &'src [(&'src str, &'src str)],
+    pub(crate) keywords: &'src [&'src str],
+    pub(crate) literals: &'src [&'src str],
+    pub(crate) tokens: &'src [&'src str],
+    pub(crate) nodes: &'src [&'src str],
 }
 
 pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
@@ -60,7 +60,7 @@ pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
     ],
     keywords: &[
         "type", "struct", "enum", "trait", "val", "var", "const", "using", "extend", "import",
-        "export", "fn", "true", "false",
+        "export", "fn", "true", "false", "where", "box",
     ],
     literals: &[
         "INT_LITERAL",
@@ -83,8 +83,9 @@ pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
         "NAME",
         "LITERAL",
         "ITEM",
-        "TYPE_DEFINITION",
-        "TYPE_LIST",
+        "TYPE_DECLARATION",
+        "NAMED_TYPE",
+        "NAMED_TYPE_LIST",
         "STRUCT_TYPE",
         "TRAIT_TYPE",
         "ENUM_TYPE",
@@ -93,7 +94,12 @@ pub(crate) const SYNTAX_KINDS_SRC: SyntaxKindsSrc<'static> = SyntaxKindsSrc {
         "ENUM_VARIANT_BODY_EXPR",
         "ENUM_VARIANT_LIST",
         "STRUCT_FIELD",
-        "STRUCT_FIELD_DEFINITION_LIST",
+        "STRUCT_FIELD_LIST",
+        "TYPE_LIST",
+        "GENERIC_PARAMETER_LIST",
+        "GENERIC_ARGUMENT_LIST",
+        "CONSTRAINT",
+        "CONSTRAINT_LIST",
         "BINARY_EXPR",
         "INTERPOLATED_STRING",
         "INTERPOLATED_STRING_PARTS",

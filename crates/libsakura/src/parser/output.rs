@@ -15,6 +15,7 @@ enum OutputEvent {
 // Assertion to ensure that OutputEvent stays 32-bits in length.
 const __OUTPUT_EVENT_SIZE_ASSERT: () = assert!(std::mem::size_of::<OutputEvent>() == 4);
 
+#[derive(Debug)]
 pub enum ParserOutputStep<'a> {
     Enter { kind: SyntaxKind },
     Token { kind: SyntaxKind, input_token_count: u8 },

@@ -12,7 +12,12 @@ impl<'a> TokenConverter<'a> {
     pub(super) fn convert(text: &str) -> LexedStr {
         let tokens = tokenizer::tokenize(text);
         let mut converter = TokenConverter {
-            result: LexedStr { text, kinds: Vec::new(), tokens: Vec::new(), errors: Vec::new() },
+            result: LexedStr {
+                text,
+                kinds: Vec::new(),
+                token_starts: Vec::new(),
+                errors: Vec::new(),
+            },
             offset: 0,
         };
 
@@ -75,7 +80,6 @@ impl<'a> TokenConverter<'a> {
             TokenKind::Tilde => T!["~"],
             TokenKind::Percent => T!["%"],
             TokenKind::Unknown => SyntaxKind::ERROR,
-            _ => unreachable!("Unexpected token kind: {:?}", token.kind()),
         };
 
         self.push(syntax_kind, text, err);
@@ -142,9 +146,8 @@ impl<'a> TokenConverter<'a> {
     }
 
     fn push(&mut self, kind: SyntaxKind, text: &str, err: Option<&str>) {
-        let token_range = self.offset..self.offset + text.len();
         self.result.kinds.push(kind);
-        self.result.tokens.push(token_range.clone());
+        self.result.token_starts.push(self.offset);
         self.offset += text.len();
 
         if let Some(err) = err {
