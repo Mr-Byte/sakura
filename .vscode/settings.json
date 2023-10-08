@@ -1,4 +1,0 @@
-{
-  "rust-analyzer.showUnlinkedFileNotification": false,
-  "cmake.sourceDirectory": "${workspaceFolder}/crates/binaryen-sys/binaryen"
-}
