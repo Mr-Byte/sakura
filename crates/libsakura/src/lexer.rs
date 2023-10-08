@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_lexer_unterminated_string() {
-        let input = r#""test"#;
+        let input = r#""tests"#;
         let expected_kinds = vec![SyntaxKind::STRING_LITERAL, SyntaxKind::EOF];
         let expected_errors =
             vec![(0, r#"Missing trailing " required to terminate a string literal."#)];
@@ -138,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_lexer_unterminated_interpolated_string() {
-        let input = r#""$test"#;
+        let input = r#""$tests"#;
         let expected_kinds = vec![
             SyntaxKind::STRING_LITERAL,
             T!["$"],
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_lexer_unclosed_expression_slot() {
-        let input = r#""${test"#;
+        let input = r#""${tests"#;
         let expected_kinds = vec![
             SyntaxKind::STRING_LITERAL,
             T!["$"],
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_lexer_float_field_access() {
-        let input = r#"5.0.test()"#;
+        let input = r#"5.0.tests()"#;
         let expected_kinds = vec![
             SyntaxKind::FLOAT_LITERAL,
             SyntaxKind::DOT,

@@ -100,7 +100,7 @@ mod test {
     #[test]
     #[should_panic]
     fn marker_should_panic_when_dropped() {
-        let input = LexedStr::new("test");
+        let input = LexedStr::new("tests");
         let input: ParserInput = input.as_input();
         let mut parser = Parser::new(&input);
 
@@ -109,7 +109,7 @@ mod test {
 
     #[test]
     fn marker_updates_start_event_on_complete() {
-        let input = LexedStr::new("test");
+        let input = LexedStr::new("tests");
         let input: ParserInput = input.as_input();
         let mut parser = Parser::new(&input);
 
@@ -126,7 +126,7 @@ mod test {
 
     #[test]
     fn marker_doesnt_update_start_event_on_abandon() {
-        let input = LexedStr::new("test");
+        let input = LexedStr::new("tests");
         let input: ParserInput = input.as_input();
         let mut parser = Parser::new(&input);
 

@@ -411,7 +411,7 @@ mod test {
 
     #[test]
     fn tokenizes_basic_double_quoted_string() {
-        let input = r#""test""#;
+        let input = r#""tests""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
         let expected =
             Literal { kind: LiteralKind::String { terminated: true }, suffix_start: None };
@@ -422,7 +422,7 @@ mod test {
 
     #[test]
     fn tokenizes_unterminated_double_quoted_string() {
-        let input = r#""test"#;
+        let input = r#""tests"#;
         let tokens = tokenize(input).collect::<Vec<_>>();
         let expected =
             Literal { kind: LiteralKind::String { terminated: false }, suffix_start: None };
@@ -433,7 +433,7 @@ mod test {
 
     #[test]
     fn tokenizes_interpolated_string_with_identifier() {
-        let input = r#""$test""#;
+        let input = r#""$tests""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
         let expected =
             Literal { kind: LiteralKind::StringPart { terminated: true }, suffix_start: None };
@@ -450,7 +450,7 @@ mod test {
 
     #[test]
     fn tokenizes_unterminated_interpolated_quoted_string() {
-        let input = r#""$test"#;
+        let input = r#""$tests"#;
         let tokens = tokenize(input).collect::<Vec<_>>();
         let open_expected =
             Literal { kind: LiteralKind::StringPart { terminated: true }, suffix_start: None };
@@ -466,7 +466,7 @@ mod test {
 
     #[test]
     fn tokenizes_interpolated_string_with_expression() {
-        let input = r#""${test}""#;
+        let input = r#""${tests}""#;
         let tokens = tokenize(input).collect::<Vec<_>>();
         let open_expected =
             Literal { kind: LiteralKind::StringPart { terminated: true }, suffix_start: None };
@@ -518,12 +518,12 @@ mod test {
 
     #[test]
     fn tokenizes_identifiers() {
-        let input = "test";
+        let input = "tests";
         let tokens = tokenize(input).collect::<Vec<_>>();
 
         assert_eq!(1, tokens.len());
         assert_eq!(Identifier, tokens[0].kind());
-        assert_eq!("test", &input[..tokens[0].len()]);
+        assert_eq!("tests", &input[..tokens[0].len()]);
     }
 
     #[test]

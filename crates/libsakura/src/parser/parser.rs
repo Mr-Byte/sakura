@@ -3,20 +3,24 @@ use crate::parser::input::ParserInput;
 use crate::parser::marker::Marker;
 use crate::syntax::{SyntaxKind, TokenSet};
 use crate::T;
+use std::cell::Cell;
 
 pub(in crate::parser) struct Parser<'a> {
     input: &'a ParserInput,
     position: usize,
     pub(super) events: Vec<Event>,
-    // TODO: Add parser hang detection.
+    steps: Cell<u32>,
 }
+
+const PARSER_STEP_LIMIT: u32 = 10_000_000;
 
 /// Public methods.
 impl<'a> Parser<'a> {
     pub(in crate::parser) fn new(input: &'a ParserInput) -> Parser<'a> {
-        Parser { input, position: 0, events: Vec::new() }
+        Parser { input, position: 0, events: Vec::new(), steps: Cell::new(0) }
     }
 
+    #[must_use]
     pub(in crate::parser) fn start_node(&mut self) -> Marker {
         let position = self.events.len();
         self.push_event(Event::tombstone());
@@ -89,6 +93,7 @@ impl<'a> Parser<'a> {
 
     fn do_bump(&mut self, kind: SyntaxKind, raw_token_count: u8) {
         self.position += raw_token_count as usize;
+        self.steps.set(0);
         self.push_event(Event::Token { kind, raw_token_count });
     }
 
@@ -106,6 +111,10 @@ impl<'a> Parser<'a> {
     pub(in crate::parser) fn nth(&self, n: usize) -> SyntaxKind {
         assert!(n < 3);
 
+        let steps = self.steps.get();
+        assert!(steps < PARSER_STEP_LIMIT, "parser appears to be in a stuck state");
+        self.steps.set(steps + 1);
+
         self.input.kind(self.position + n)
     }
 }
@@ -118,10 +127,6 @@ impl<'a> Parser<'a> {
 
     pub(in crate::parser) fn at_token_set(&self, kinds: TokenSet) -> bool {
         kinds.contains(self.current())
-    }
-
-    pub(in crate::parser) fn nth_at_token_set(&self, n: usize, kinds: TokenSet) -> bool {
-        kinds.contains(self.nth(n))
     }
 
     pub(in crate::parser) fn nth_at(&self, n: usize, kind: SyntaxKind) -> bool {

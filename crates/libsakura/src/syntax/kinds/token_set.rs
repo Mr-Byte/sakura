@@ -2,6 +2,7 @@ use super::SyntaxKind;
 
 /// TokenSet is used to store a set of ['SyntaxKind'] that can be efficiently checked for membership.
 /// This will panic if a SyntaxKind is passed that is not a token.
+#[derive(Copy, Clone)]
 pub(crate) struct TokenSet(u128);
 
 impl TokenSet {

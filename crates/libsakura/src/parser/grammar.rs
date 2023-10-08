@@ -1,3 +1,4 @@
+mod generics;
 mod items;
 mod types;
 
@@ -41,25 +42,26 @@ pub(in crate::parser) fn delimited_list(
     start: SyntaxKind,
     end: SyntaxKind,
     delimiter: SyntaxKind,
-    item: fn(&mut Parser<'_>),
+    first_kind_set: TokenSet,
+    mut item: impl FnMut(&mut Parser<'_>) -> bool,
 ) {
-    parser.expect(start);
+    parser.bump(start);
 
-    loop {
-        if parser.at(end) || parser.at(SyntaxKind::EOF) {
+    while !parser.at(end) && !parser.at(SyntaxKind::EOF) {
+        if !item(parser) {
             break;
         }
 
-        item(parser);
+        if parser.at(delimiter) {
+            parser.bump(delimiter);
+            continue;
+        }
 
-        if parser.nth_at(0, delimiter) && parser.nth_at(1, end) {
-            parser.expect(delimiter);
+        if !parser.at_token_set(first_kind_set) {
             break;
         }
 
-        if !parser.at(end) {
-            parser.expect(delimiter);
-        }
+        parser.error(format!("expected {delimiter:?}"));
     }
 
     parser.expect(end);

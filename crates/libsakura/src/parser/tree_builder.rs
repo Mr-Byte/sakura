@@ -1,23 +1,54 @@
 use crate::lexer::LexedStr;
 use crate::parser::{ParserOutput, ParserOutputStep};
-use crate::syntax::{SyntaxError, SyntaxKind, SyntaxTreeBuilder};
-use rowan::{GreenNode, TextRange};
+use crate::syntax::{GreenNode, SyntaxError, SyntaxKind, SyntaxTreeBuilder};
+use rowan::TextRange;
 
-pub enum StrStep<'a> {
+pub enum LexedStrStep<'a> {
     Token { kind: SyntaxKind, text: &'a str },
     Enter { kind: SyntaxKind },
     Exit,
     Error { message: &'a str, position: usize },
 }
 
+impl<'a> LexedStr<'a> {
+    /// Using the provided [`ParserOutput`] and `sink`, this function will emit events with all
+    /// trivia interspersed into the resulting events.
+    pub fn with_output(&self, output: &ParserOutput, mut sink: impl FnMut(LexedStrStep<'_>)) {
+        let mut builder =
+            TreeBuilder { lexed: self, position: 0, state: State::PendingEnter, sink: &mut sink };
+
+        for event in output.iter() {
+            match event {
+                ParserOutputStep::Token { kind, input_token_count } => {
+                    builder.token(kind, input_token_count)
+                }
+                ParserOutputStep::Enter { kind } => builder.enter(kind),
+                ParserOutputStep::Exit => builder.exit(),
+                ParserOutputStep::Error { message } => {
+                    let text_position = builder.lexed.text_range(builder.position);
+                    (builder.sink)(LexedStrStep::Error { message, position: text_position.start })
+                }
+            }
+        }
+
+        match std::mem::replace(&mut builder.state, State::Normal) {
+            State::PendingExit => {
+                builder.eat_trivia();
+                (builder.sink)(LexedStrStep::Exit);
+            }
+            State::PendingEnter | State::Normal => unreachable!(),
+        }
+    }
+}
+
 pub(crate) fn build_tree(lexed: LexedStr, output: ParserOutput) -> (GreenNode, Vec<SyntaxError>) {
     let mut builder = SyntaxTreeBuilder::default();
 
-    lexed.with_output(&output, &mut |step| match step {
-        StrStep::Token { kind, text } => builder.token(kind, text),
-        StrStep::Enter { kind } => builder.start_node(kind),
-        StrStep::Exit => builder.finish_node(),
-        StrStep::Error { message, position } => builder
+    lexed.with_output(&output, |step| match step {
+        LexedStrStep::Token { kind, text } => builder.token(kind, text),
+        LexedStrStep::Enter { kind } => builder.start_node(kind),
+        LexedStrStep::Exit => builder.finish_node(),
+        LexedStrStep::Error { message, position } => builder
             .error(message.to_string(), position.try_into().expect("position should convert")),
     });
 
@@ -36,35 +67,6 @@ pub(crate) fn build_tree(lexed: LexedStr, output: ParserOutput) -> (GreenNode, V
     (node, errors)
 }
 
-impl<'a> LexedStr<'a> {
-    pub(crate) fn with_output(&self, output: &ParserOutput, sink: &mut dyn FnMut(StrStep<'_>)) {
-        let mut builder =
-            TreeBuilder { lexed: self, position: 0, state: State::PendingEnter, sink };
-
-        for event in output.iter() {
-            match event {
-                ParserOutputStep::Token { kind, input_token_count } => {
-                    builder.token(kind, input_token_count)
-                }
-                ParserOutputStep::Enter { kind } => builder.enter(kind),
-                ParserOutputStep::Exit => builder.exit(),
-                ParserOutputStep::Error { message } => {
-                    let text_position = builder.lexed.text_range(builder.position);
-                    (builder.sink)(StrStep::Error { message, position: text_position.start })
-                }
-            }
-        }
-
-        match std::mem::replace(&mut builder.state, State::Normal) {
-            State::PendingExit => {
-                builder.eat_trivia();
-                (builder.sink)(StrStep::Exit);
-            }
-            State::PendingEnter | State::Normal => unreachable!(),
-        }
-    }
-}
-
 enum State {
     PendingEnter,
     Normal,
@@ -75,14 +77,14 @@ struct TreeBuilder<'input, 'sink> {
     lexed: &'input LexedStr<'input>,
     position: usize,
     state: State,
-    sink: &'sink mut dyn FnMut(StrStep<'_>),
+    sink: &'sink mut dyn FnMut(LexedStrStep<'_>),
 }
 
 impl TreeBuilder<'_, '_> {
     fn token(&mut self, kind: SyntaxKind, token_count: u8) {
         match std::mem::replace(&mut self.state, State::Normal) {
             State::PendingEnter => unreachable!(),
-            State::PendingExit => (self.sink)(StrStep::Exit),
+            State::PendingExit => (self.sink)(LexedStrStep::Exit),
             State::Normal => (),
         }
 
@@ -93,11 +95,11 @@ impl TreeBuilder<'_, '_> {
     fn enter(&mut self, kind: SyntaxKind) {
         match std::mem::replace(&mut self.state, State::Normal) {
             State::PendingEnter => {
-                (self.sink)(StrStep::Enter { kind });
+                (self.sink)(LexedStrStep::Enter { kind });
 
                 return;
             }
-            State::PendingExit => (self.sink)(StrStep::Exit),
+            State::PendingExit => (self.sink)(LexedStrStep::Exit),
             State::Normal => (),
         }
 
@@ -113,14 +115,14 @@ impl TreeBuilder<'_, '_> {
         );
 
         self.eat_trivia_count(trivia_count - attached_trivia_count);
-        (self.sink)(StrStep::Enter { kind });
+        (self.sink)(LexedStrStep::Enter { kind });
         self.eat_trivia_count(attached_trivia_count);
     }
 
     fn exit(&mut self) {
         match std::mem::replace(&mut self.state, State::PendingExit) {
             State::PendingEnter => unreachable!(),
-            State::PendingExit => (self.sink)(StrStep::Exit),
+            State::PendingExit => (self.sink)(LexedStrStep::Exit),
             State::Normal => (),
         }
     }
@@ -150,7 +152,7 @@ impl TreeBuilder<'_, '_> {
         let text = &self.lexed.text_from_range(self.position..(self.position + 1));
 
         self.position += token_count;
-        (self.sink)(StrStep::Token { kind, text });
+        (self.sink)(LexedStrStep::Token { kind, text });
     }
 }
 

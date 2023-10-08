@@ -112,7 +112,7 @@ mod test {
         builder.token(T!["{"], "{");
         builder.token(SyntaxKind::WHITESPACE, " ");
         builder.start_node(SyntaxKind::NAME);
-        builder.token(T!["identifier"], "test");
+        builder.token(T!["identifier"], "tests");
         builder.finish_node();
         builder.token(SyntaxKind::WHITESPACE, " ");
         builder.token(T!["}"], "}");
@@ -121,13 +121,13 @@ mod test {
         let parse = builder.finish();
         let slot = parse.cast::<InterpolatedStringSlot>().unwrap().tree();
         let value = slot.syntax.text().to_string();
-        assert_eq!("${ test }", value);
+        assert_eq!("${ tests }", value);
 
         let expr = slot.expr().expect("expected an expression");
         let Expr::Name(ident) = expr else {
             panic!("expected an identifier");
         };
         let token = ident.identifier_token().expect("expected an identifier token");
-        assert_eq!("test", token.text());
+        assert_eq!("tests", token.text());
     }
 }

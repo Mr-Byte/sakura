@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/libsakura/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sakurac/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/xtask/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/libsakura/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

@@ -1,15 +1,48 @@
+use super::generics;
 use crate::parser::grammar::{delimited_list, name};
 use crate::parser::parser::Parser;
 use crate::syntax::{SyntaxKind, TokenSet};
 use crate::T;
 
-pub(in crate::parser) fn type_body(parser: &mut Parser) {
+pub(super) const TYPE_FIRST_KIND_SET: TokenSet = TokenSet::new(&[
+    T!["box"],
+    T!["fn"],
+    T!["struct"],
+    T!["enum"],
+    T!["trait"],
+    T!["&"],
+    T!["_"],
+    T!["["],
+    SyntaxKind::IDENTIFIER,
+]);
+
+pub(super) const TYPE_RECOVERY_SET: TokenSet = TokenSet::new(&[T!["]"], T![","], T!["}"]]);
+
+pub(super) fn type_(parser: &mut Parser) {
     match parser.current() {
         T!["struct"] => struct_type(parser),
+        T!["enum"] => todo!(),
+        T!["trait"] => todo!(),
+        T!["fn"] => todo!(),
+        T!["box"] => todo!(),
+        T!["&"] => todo!(),
+        T!["_"] => todo!(),
+        T!["["] => todo!(),
+        SyntaxKind::IDENTIFIER => named_type(parser),
         _ => {
-            parser.error_and_bump("expected a type");
+            parser.error_recover("expected a type", TYPE_RECOVERY_SET);
         }
     }
+}
+
+// TODO: Make this not suck shit
+fn named_type(parser: &mut Parser) {
+    let marker = parser.start_node();
+
+    name(parser);
+    generics::optional_generic_argument_list(parser);
+
+    marker.complete(parser, SyntaxKind::NAMED_TYPE);
 }
 
 fn struct_type(parser: &mut Parser) {
@@ -21,86 +54,31 @@ fn struct_type(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::STRUCT_TYPE);
 }
 
+const STRUCT_FIELD_START_SET: TokenSet = TokenSet::new(&[SyntaxKind::IDENTIFIER]);
+
 fn struct_field_list(parser: &mut Parser) {
+    // TODO: Overhaul this
     let marker = parser.start_node();
 
-    delimited_list(parser, T!["{"], T!["}"], T![","], struct_field);
+    delimited_list(parser, T!["{"], T!["}"], T![","], STRUCT_FIELD_START_SET, |parser| {
+        struct_field(parser)
+    });
 
     marker.complete(parser, SyntaxKind::STRUCT_FIELD_LIST);
 }
 
-fn struct_field(parser: &mut Parser) {
+fn struct_field(parser: &mut Parser) -> bool {
     let marker = parser.start_node();
 
     name(parser);
-    parser.expect(T![":"]);
-    name(parser);
+
+    if !parser.eat(T![":"]) {
+        parser.error("expected ':'")
+    }
+
+    type_(parser);
 
     marker.complete(parser, SyntaxKind::STRUCT_FIELD);
-}
 
-pub(in crate::parser) fn generic_parameter_list(parser: &mut Parser) {
-    let marker = parser.start_node();
-
-    delimited_list(parser, T!["["], T!["]"], T![","], name);
-
-    marker.complete(parser, SyntaxKind::GENERIC_PARAMETER_LIST);
-}
-
-pub(in crate::parser) fn constraint_list(parser: &mut Parser) {
-    let marker = parser.start_node();
-
-    while !parser.at(T!["="]) {
-        constraint(parser);
-    }
-
-    marker.complete(parser, SyntaxKind::CONSTRAINT_LIST);
-}
-
-const CONSTRAINT_END: TokenSet = TokenSet::new(&[T!["="], T!["where"]]);
-
-fn constraint(parser: &mut Parser) {
-    let marker = parser.start_node();
-
-    parser.expect(T!["where"]);
-    name(parser);
-    parser.expect(T![":"]);
-
-    let inner_marker = parser.start_node();
-    loop {
-        // TODO: Add support for types as constraints, not just names.
-        named_type(parser);
-
-        if parser.nth_at(0, T![","]) && parser.nth_at_token_set(1, CONSTRAINT_END) {
-            parser.expect(T![","]);
-            break;
-        }
-
-        if parser.at_token_set(CONSTRAINT_END) {
-            break;
-        }
-
-        parser.expect(T![","]);
-    }
-    inner_marker.complete(parser, SyntaxKind::NAMED_TYPE_LIST);
-
-    marker.complete(parser, SyntaxKind::CONSTRAINT);
-}
-
-pub(in crate::parser) fn named_type(parser: &mut Parser) {
-    let marker = parser.start_node();
-
-    if parser.at(T!["box"]) {
-        parser.bump(T!["box"]);
-    }
-
-    name(parser);
-
-    if parser.at(T!["["]) {
-        let marker = parser.start_node();
-        delimited_list(parser, T!["["], T!["]"], T![","], named_type);
-        marker.complete(parser, SyntaxKind::GENERIC_ARGUMENT_LIST);
-    }
-
-    marker.complete(parser, SyntaxKind::NAMED_TYPE);
+    true
 }

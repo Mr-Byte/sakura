@@ -7,9 +7,12 @@ mod marker;
 mod output;
 mod parser;
 
-pub use crate::parser::input::ParserInput;
-pub use crate::parser::output::ParserOutput;
-pub use crate::parser::output::ParserOutputStep;
+pub(crate) mod tree_builder;
+
+pub use self::input::ParserInput;
+pub use self::output::ParserOutput;
+pub use self::output::ParserOutputStep;
+pub use self::tree_builder::LexedStrStep;
 
 pub enum EntryPoint {
     SourceFile,

@@ -9,6 +9,9 @@ pub use kinds::*;
 
 use rowan::Language;
 
+/// A raw green node.ß
+pub type GreenNode = rowan::GreenNode;
+
 /// A node in the immutable tree. It has other nodes and tokens as children.
 pub type SyntaxNode = rowan::SyntaxNode<SakuraLanguage>;
 
@@ -18,7 +21,7 @@ pub type SyntaxToken = rowan::SyntaxToken<SakuraLanguage>;
 /// A `SyntaxNode` or a `SyntaxToken`.
 pub type SyntaxElement = rowan::SyntaxElement<SakuraLanguage>;
 
-/// Children of a `SyntaxNode`.
+/// Children of a `SyntaxNode`.∑
 pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<SakuraLanguage>;
 
 /// A wrapper around `SyntaxNodePtr`.

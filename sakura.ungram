@@ -1,7 +1,11 @@
 SourceFile =
     Item*
 
+Export =
+    'export'
+
 Item =
+    Export?
     TypeDeclaration
 
 // Types
@@ -21,9 +25,6 @@ Type =
 
 NamedType =
     'box'? Name GenericArgumentList?
-
-NamedTypeList =
-    types:(NamedType (',' NamedType)* ','?)?
 
 StructType =
     'struct' body:StructFieldList
@@ -67,14 +68,27 @@ TypeList =
 GenericParameterList =
     '[' params:(Name (',' Name)* ','?) ']'
 
+TypeParameter =
+    Name ('=' default_type:NamedType)?
+
 GenericArgumentList =
-    '[' types:(NamedType (',' NamedType)* ','?)? ']'
+    '[' arguments:(TypeArgument (',' TypeArgument)* ','?)? ']'
+
+TypeArgument =
+    NamedType
 
 ConstraintList =
     Constraint*
 
 Constraint =
-    'where' param:Name ':' constraints:TypeList
+    'where' param:Name ':' bounds:TypeList
+
+TypeBoundList =
+    bounds:(TypeBound ('+' TypeBound)* '+'?)
+
+// TODO: Add additional bounds
+TypeBound =
+    Type
 
 // Expressions
 Expr =

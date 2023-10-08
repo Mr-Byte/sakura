@@ -1,7 +1,7 @@
 use crate::lexer::LexedStr;
 use crate::parser;
-use crate::syntax::{ast::AstNode, SyntaxNode};
-use rowan::GreenNode;
+use crate::parser::tree_builder::build_tree;
+use crate::syntax::{ast::AstNode, GreenNode, SyntaxNode};
 use std::{marker::PhantomData, sync::Arc};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -55,7 +55,6 @@ impl Parse<SyntaxNode> {
 
 pub use crate::syntax::ast::SourceFile;
 use crate::syntax::SyntaxError;
-use crate::tree_builder::build_tree;
 
 impl SourceFile {
     pub fn parse(text: &str) -> Parse<SourceFile> {
@@ -65,32 +64,10 @@ impl SourceFile {
     }
 }
 
-pub fn parse_text(text: &str) -> (GreenNode, Vec<SyntaxError>) {
+pub(crate) fn parse_text(text: &str) -> (GreenNode, Vec<SyntaxError>) {
     let lexed = LexedStr::new(text);
     let parser_input = lexed.as_input();
     let parser_output = parser::EntryPoint::SourceFile.parse(&parser_input);
 
     build_tree(lexed, parser_output)
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn wat_do() {
-        let input = r#"
-type Foo[A, B]
-    where A: Foo[B],
-    where B: Bar, Baz[box i32] =
-struct {
-    bar: A,
-    baz: B,
-}
-"#;
-
-        let result = SourceFile::parse(input);
-
-        println!("{:#?}", result.syntax_node());
-    }
 }

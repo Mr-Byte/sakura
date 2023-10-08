@@ -1,7 +1,7 @@
 use crate::syntax::error::SyntaxError;
-use crate::syntax::{SakuraLanguage, SyntaxKind, SyntaxNode};
+use crate::syntax::{GreenNode, SakuraLanguage, SyntaxKind, SyntaxNode};
 use crate::Parse;
-use rowan::{GreenNode, GreenNodeBuilder, Language, TextSize};
+use rowan::{GreenNodeBuilder, Language, TextSize};
 
 #[derive(Default)]
 pub struct SyntaxTreeBuilder {

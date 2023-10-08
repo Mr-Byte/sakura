@@ -43,6 +43,10 @@ pub struct Item {
 }
 
 impl Item {
+    pub fn export(&self) -> Option<Export> {
+        support::child(&self.syntax)
+    }
+
     pub fn type_declaration(&self) -> Option<TypeDeclaration> {
         support::child(&self.syntax)
     }
@@ -51,6 +55,35 @@ impl Item {
 impl AstNode for Item {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == ITEM
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Export {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl Export {
+    pub fn export_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["export"])
+    }
+}
+
+impl AstNode for Export {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == EXPORT
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -360,7 +393,7 @@ impl GenericArgumentList {
         support::token(&self.syntax, T!["["])
     }
 
-    pub fn types(&self) -> AstChildren<NamedType> {
+    pub fn arguments(&self) -> AstChildren<TypeArgument> {
         support::children(&self.syntax)
     }
 
@@ -372,35 +405,6 @@ impl GenericArgumentList {
 impl AstNode for GenericArgumentList {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == GENERIC_ARGUMENT_LIST
-    }
-
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if Self::can_cast(syntax.kind()) {
-            Some(Self { syntax })
-        } else {
-            None
-        }
-    }
-
-    fn syntax(&self) -> &SyntaxNode {
-        &self.syntax
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct NamedTypeList {
-    pub(crate) syntax: SyntaxNode,
-}
-
-impl NamedTypeList {
-    pub fn types(&self) -> AstChildren<NamedType> {
-        support::children(&self.syntax)
-    }
-}
-
-impl AstNode for NamedTypeList {
-    fn can_cast(kind: SyntaxKind) -> bool {
-        kind == NAMED_TYPE_LIST
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -656,6 +660,72 @@ impl AstNode for TypeList {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TypeParameter {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl TypeParameter {
+    pub fn name(&self) -> Option<Name> {
+        support::child(&self.syntax)
+    }
+
+    pub fn equal_token(&self) -> Option<SyntaxToken> {
+        support::token(&self.syntax, T!["="])
+    }
+
+    pub fn default_type(&self) -> Option<NamedType> {
+        support::child(&self.syntax)
+    }
+}
+
+impl AstNode for TypeParameter {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TYPE_PARAMETER
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TypeArgument {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl TypeArgument {
+    pub fn named_type(&self) -> Option<NamedType> {
+        support::child(&self.syntax)
+    }
+}
+
+impl AstNode for TypeArgument {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TYPE_ARGUMENT
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Constraint {
     pub(crate) syntax: SyntaxNode,
 }
@@ -673,7 +743,7 @@ impl Constraint {
         support::token(&self.syntax, T![":"])
     }
 
-    pub fn constraints(&self) -> Option<TypeList> {
+    pub fn bounds(&self) -> Option<TypeList> {
         support::child(&self.syntax)
     }
 }
@@ -681,6 +751,64 @@ impl Constraint {
 impl AstNode for Constraint {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == CONSTRAINT
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TypeBoundList {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl TypeBoundList {
+    pub fn bounds(&self) -> AstChildren<TypeBound> {
+        support::children(&self.syntax)
+    }
+}
+
+impl AstNode for TypeBoundList {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TYPE_BOUND_LIST
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.syntax
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TypeBound {
+    pub(crate) syntax: SyntaxNode,
+}
+
+impl TypeBound {
+    pub fn ty(&self) -> Option<Type> {
+        support::child(&self.syntax)
+    }
+}
+
+impl AstNode for TypeBound {
+    fn can_cast(kind: SyntaxKind) -> bool {
+        kind == TYPE_BOUND
     }
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {

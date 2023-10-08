@@ -30,7 +30,7 @@ pub(crate) fn ensure_file_contents(file: &Path, contents: &str) -> Result<(), Co
     fs::write(file, contents).map_err(Into::<anyhow::Error>::into)?;
 
     let display_path = file.strip_prefix(root_path()?).unwrap_or(file);
-    let err = format!("{} has been updated, please re-run `cargo test`", display_path.display());
+    let err = format!("{} has been updated, please re-run `cargo tests`", display_path.display());
 
     Err(CodegenError::CodeUpdated(err))
 }

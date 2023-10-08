@@ -48,7 +48,7 @@ impl ParserInput {
 }
 
 impl LexedStr<'_> {
-    pub(crate) fn as_input(&self) -> ParserInput {
+    pub fn as_input(&self) -> ParserInput {
         let mut builder = ParserInputBuilder::default();
 
         let mut is_joint = false;
