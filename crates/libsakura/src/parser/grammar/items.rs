@@ -1,4 +1,4 @@
-use crate::parser::grammar::{generics, name_recovery, types};
+use crate::parser::grammar::{error_block, generics, name_recovery, types};
 use crate::parser::marker::Marker;
 use crate::parser::parser::Parser;
 use crate::syntax::{SyntaxKind, TokenSet};
@@ -20,14 +20,7 @@ fn item(parser: &mut Parser<'_>) {
     };
 
     marker.abandon(parser);
-
-    // TODO: Implement error recovery
-
-    match parser.current() {
-        // TODO: Handle `{` and consuming blocks.
-        SyntaxKind::EOF | T!["}"] => parser.error("expected an item"),
-        _ => parser.error_and_bump("expected an item"),
-    }
+    parser.error("expected an item");
 }
 
 fn optional_export(parser: &mut Parser<'_>) -> bool {
@@ -50,6 +43,10 @@ fn optional_item(parser: &mut Parser<'_>, marker: Marker) -> Result<(), Marker> 
         _ if is_exported => {
             parser.error_and_bump("expected an item");
             marker.complete(parser, SyntaxKind::ERROR);
+        }
+        T!["{"] => {
+            error_block(parser, "expected an item");
+            return Err(marker);
         }
         _ => {
             parser.error_and_bump("expected an item");

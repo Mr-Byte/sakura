@@ -1,5 +1,5 @@
 use super::generics;
-use crate::parser::grammar::{delimited_list, name};
+use crate::parser::grammar::{error_block, name};
 use crate::parser::parser::Parser;
 use crate::syntax::{SyntaxKind, TokenSet};
 use crate::T;
@@ -54,21 +54,37 @@ fn struct_type(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::STRUCT_TYPE);
 }
 
-const STRUCT_FIELD_START_SET: TokenSet = TokenSet::new(&[SyntaxKind::IDENTIFIER]);
-
 fn struct_field_list(parser: &mut Parser) {
-    // TODO: Overhaul this
+    assert!(parser.at(T!["{"]));
+
     let marker = parser.start_node();
+    parser.bump(T!["{"]);
 
-    delimited_list(parser, T!["{"], T!["}"], T![","], STRUCT_FIELD_START_SET, |parser| {
-        struct_field(parser)
-    });
+    while !parser.at(T!["}"]) && !parser.at(SyntaxKind::EOF) {
+        if parser.at(T!["{"]) {
+            error_block(parser, "expected a field");
+            continue;
+        }
 
+        struct_field(parser);
+
+        if !parser.at(T!["}"]) {
+            parser.expect(T![","]);
+        }
+    }
+
+    parser.expect(T!["}"]);
     marker.complete(parser, SyntaxKind::STRUCT_FIELD_LIST);
 }
 
-fn struct_field(parser: &mut Parser) -> bool {
+fn struct_field(parser: &mut Parser)  {
     let marker = parser.start_node();
+
+    if !parser.at(SyntaxKind::IDENTIFIER) {
+        marker.abandon(parser);
+        parser.error_and_bump("expected a field declaration");
+        return;
+    }
 
     name(parser);
 
@@ -79,6 +95,4 @@ fn struct_field(parser: &mut Parser) -> bool {
     type_(parser);
 
     marker.complete(parser, SyntaxKind::STRUCT_FIELD);
-
-    true
 }

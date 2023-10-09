@@ -72,19 +72,24 @@ fn parses_simple_struct_declaration_with_malformed_fields_using_keywords() {
                   STRUCT_FIELD_LIST
                     LEFT_CURLY "{"
                     WHITESPACE "\n                "
-                    STRUCT_FIELD
-                      ERROR
-                        WHERE_KW "where"
+                    ERROR
+                      WHERE_KW "where"
+                    ERROR
                       COLON ":"
-                      WHITESPACE " "
-                      NAMED_TYPE
-                        NAME
-                          IDENTIFIER "i32"
+                    WHITESPACE " "
+                    STRUCT_FIELD
+                      NAME
+                        IDENTIFIER "i32"
                     COMMA ","
                     WHITESPACE "\n            "
                     RIGHT_CURLY "}"
               WHITESPACE "\n            "
-            error 49: expected a name
+            error 49: expected a field declaration
+            error 54: expected COMMA
+            error 54: expected a field declaration
+            error 55: expected COMMA
+            error 59: expected ':'
+            error 59: expected a type
         "#]],
     );
 }
@@ -291,6 +296,7 @@ fn parses_malformed_simple_struct_declaration_with_missing_right_curly() {
                         NAME
                           IDENTIFIER "i32"
               WHITESPACE "\n            "
+            error 83: expected COMMA
             error 83: expected RIGHT_CURLY
         "#]],
     );
@@ -665,6 +671,85 @@ fn parses_new_type_declaration_with_malformed_generic_params_constraints_and_arg
                     RIGHT_BRACKET "]"
               WHITESPACE "\n            "
             error 23: expected RIGHT_BRACKET
+        "#]],
+    );
+}
+
+#[test]
+fn parser_recovers_from_invalid_item() {
+    check(
+        EntryPoint::SourceFile,
+        r#"
+            type Foo[ = i32 type Bar = i32
+            "#,
+        expect![[r#"
+            SOURCE_FILE
+              WHITESPACE "\n            "
+              TYPE_DECLARATION
+                TYPE_KW "type"
+                WHITESPACE " "
+                NAME
+                  IDENTIFIER "Foo"
+                GENERIC_PARAMETER_LIST
+                  LEFT_BRACKET "["
+                  WHITESPACE " "
+                  ERROR
+                    EQUAL "="
+              WHITESPACE " "
+              ERROR
+                IDENTIFIER "i32"
+              WHITESPACE " "
+              TYPE_DECLARATION
+                TYPE_KW "type"
+                WHITESPACE " "
+                NAME
+                  IDENTIFIER "Bar"
+                WHITESPACE " "
+                EQUAL "="
+                WHITESPACE " "
+                NAMED_TYPE
+                  NAME
+                    IDENTIFIER "i32"
+              WHITESPACE "\n            "
+            error 23: expected a generic parameter
+            error 24: expected RIGHT_BRACKET
+            error 24: expected '='
+            error 25: expected an item
+            error 28: expected an item
+        "#]],
+    );
+}
+
+#[test]
+fn parser_recovers_from_invalid_type_declaration() {
+    // TODO: Improve the error diagnostics of this failure scenario
+    check(
+        EntryPoint::SourceFile,
+        r#"
+            type Foo { x: i32 }
+            "#,
+        expect![[r#"
+            SOURCE_FILE
+              WHITESPACE "\n            "
+              TYPE_DECLARATION
+                TYPE_KW "type"
+                WHITESPACE " "
+                NAME
+                  IDENTIFIER "Foo"
+              WHITESPACE " "
+              ERROR
+                LEFT_CURLY "{"
+                WHITESPACE " "
+                IDENTIFIER "x"
+                COLON ":"
+                WHITESPACE " "
+                IDENTIFIER "i32"
+                WHITESPACE " "
+                RIGHT_CURLY "}"
+              WHITESPACE "\n            "
+            error 21: expected '='
+            error 22: expected an item
+            error 32: expected an item
         "#]],
     );
 }

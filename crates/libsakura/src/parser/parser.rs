@@ -196,11 +196,6 @@ impl Parser<'_> {
     }
 
     pub(in crate::parser) fn error_recover(&mut self, message: &str, recovery_set: TokenSet) {
-        if let T!["{"] | T!["}"] = self.current() {
-            self.error(message);
-            return;
-        }
-
         if self.at_token_set(recovery_set) {
             self.error(message);
             return;

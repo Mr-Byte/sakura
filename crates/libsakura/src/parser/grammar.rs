@@ -2,8 +2,10 @@ mod generics;
 mod items;
 mod types;
 
+use crate::parser::expressions;
 use super::parser::Parser;
 use crate::syntax::{SyntaxKind, TokenSet};
+use crate::T;
 
 pub(in crate::parser) mod entry {
     use super::*;
@@ -35,6 +37,19 @@ pub(in crate::parser) fn name_recovery(parser: &mut Parser<'_>, recovery_set: To
     let marker = parser.start_node();
     parser.bump(SyntaxKind::IDENTIFIER);
     marker.complete(parser, SyntaxKind::NAME);
+}
+
+pub(in crate::parser) fn error_block(parser: &mut Parser, message: &str) {
+    assert!(parser.at(T!["{"]));
+
+    let m = parser.start_node();
+    parser.error(message);
+    parser.bump(T!["{"]);
+
+    expressions::expression_block(parser);
+
+    parser.eat(T!["}"]);
+    m.complete(parser, SyntaxKind::ERROR);
 }
 
 pub(in crate::parser) fn delimited_list(
