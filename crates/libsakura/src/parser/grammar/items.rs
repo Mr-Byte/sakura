@@ -40,6 +40,9 @@ fn optional_item(parser: &mut Parser<'_>, marker: Marker) -> Result<(), Marker> 
 
     match parser.current() {
         T!["type"] => type_declaration(parser, marker),
+        T!["const"] => todo!(),
+        T!["extend"] => todo!(),
+        T!["fn"] => todo!(),
         _ if is_exported => {
             parser.error_and_bump("expected an item");
             marker.complete(parser, SyntaxKind::ERROR);
@@ -57,10 +60,26 @@ fn optional_item(parser: &mut Parser<'_>, marker: Marker) -> Result<(), Marker> 
     Ok(())
 }
 
+const TYPE_DECLARATION_FOLLOW_SET: TokenSet = TokenSet::new(&[T!["["], T!["="], T!["where"]]);
+
 fn type_declaration(parser: &mut Parser, marker: Marker) {
     parser.bump(T!["type"]);
 
     name_recovery(parser, ITEM_RECOVERY_SET);
+
+    if !parser.at_token_set(TYPE_DECLARATION_FOLLOW_SET) {
+        const ERROR_MSG: &str = "expected '[', '=', or 'where'";
+
+        if parser.at(T!["{"]) {
+            marker.complete(parser, SyntaxKind::TYPE_DECLARATION);
+            error_block(parser, ERROR_MSG);
+
+            return;
+        } else {
+            parser.error_and_bump(ERROR_MSG);
+        }
+    }
+
     generics::optional_generic_parameter_list(parser);
 
     match parser.current() {
@@ -77,7 +96,7 @@ fn type_declaration(parser: &mut Parser, marker: Marker) {
         T!["="] => {
             parser.bump(T!["="]);
             types::type_(parser);
-        }
+        },
         _ => parser.error("expected '='"),
     }
 

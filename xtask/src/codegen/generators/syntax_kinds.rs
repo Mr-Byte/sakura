@@ -73,6 +73,21 @@ pub(crate) fn generate(kinds: SyntaxKindsSrc<'_>) -> Result<String, CodegenError
             }
         }
 
+        impl std::fmt::Display for SyntaxKind {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let name = match self {
+                    #(#punctuation => #punctuation_values,)*
+                    #(#keywords => #keyword_values,)*
+                    #(#literals => stringify!(#literals),)*
+                    #(#tokens => stringify!(#tokens),)*
+                    #(#nodes => stringify!(#nodes),)*
+                    _ => unreachable!(),
+                };
+
+                write!(f, "{}", name)
+            }
+        }
+
         #[macro_export]
         macro_rules! T {
             #([#punctuation_values] => { $crate::syntax::SyntaxKind::#punctuation };)*

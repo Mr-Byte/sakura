@@ -77,7 +77,7 @@ impl<'a> Parser<'a> {
             return true;
         }
 
-        self.error(format!("expected {:?}", kind));
+        self.error(format!("expected '{kind}'"));
         false
     }
 

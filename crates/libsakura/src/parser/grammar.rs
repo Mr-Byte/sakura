@@ -76,7 +76,7 @@ pub(in crate::parser) fn delimited_list(
             break;
         }
 
-        parser.error(format!("expected {delimiter:?}"));
+        parser.error(format!("expected '{delimiter}'"));
     }
 
     parser.expect(end);

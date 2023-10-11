@@ -4,16 +4,19 @@ use common::check;
 use expect_test::expect;
 use libsakura::parser::EntryPoint;
 
-#[test]
-fn parses_simple_struct_declaration() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_simple_struct_declaration() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = struct {
                 bar: i32,
             }
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -43,19 +46,19 @@ fn parses_simple_struct_declaration() {
                     RIGHT_CURLY "}"
               WHITESPACE "\n            "
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_simple_struct_declaration_with_malformed_fields_using_keywords() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_simple_struct_declaration_with_malformed_fields_using_keywords() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = struct {
                 where: i32,
             }
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -85,25 +88,25 @@ fn parses_simple_struct_declaration_with_malformed_fields_using_keywords() {
                     RIGHT_CURLY "}"
               WHITESPACE "\n            "
             error 49: expected a field declaration
-            error 54: expected COMMA
+            error 54: expected ','
             error 54: expected a field declaration
-            error 55: expected COMMA
+            error 55: expected ','
             error 59: expected ':'
             error 59: expected a type
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_malformed_simple_struct_declaration_with_missing_colon() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_malformed_simple_struct_declaration_with_missing_colon() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = struct {
                 bar i32,
             }
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -133,20 +136,20 @@ fn parses_malformed_simple_struct_declaration_with_missing_colon() {
               WHITESPACE "\n            "
             error 52: expected ':'
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_malformed_simple_struct_declaration_with_missing_comma() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_malformed_simple_struct_declaration_with_missing_comma() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = struct {
                 bar: i32
                 foo: i32
             }
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -183,23 +186,23 @@ fn parses_malformed_simple_struct_declaration_with_missing_comma() {
                     WHITESPACE "\n            "
                     RIGHT_CURLY "}"
               WHITESPACE "\n            "
-            error 57: expected COMMA
+            error 57: expected ','
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_malformed_simple_struct_declaration_with_multiple_missing_comma() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_malformed_simple_struct_declaration_with_multiple_missing_comma() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = struct {
                 bar: i32
                 foo: i32
                 baz: i32
             }
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -245,22 +248,22 @@ fn parses_malformed_simple_struct_declaration_with_multiple_missing_comma() {
                     WHITESPACE "\n            "
                     RIGHT_CURLY "}"
               WHITESPACE "\n            "
-            error 57: expected COMMA
-            error 82: expected COMMA
+            error 57: expected ','
+            error 82: expected ','
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_malformed_simple_struct_declaration_with_missing_right_curly() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_malformed_simple_struct_declaration_with_missing_right_curly() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = struct {
                 bar: i32,
                 foo: i32
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -296,20 +299,20 @@ fn parses_malformed_simple_struct_declaration_with_missing_right_curly() {
                         NAME
                           IDENTIFIER "i32"
               WHITESPACE "\n            "
-            error 83: expected COMMA
-            error 83: expected RIGHT_CURLY
+            error 83: expected ','
+            error 83: expected '}'
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_generic_args() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_generic_args() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = Bar[i32]
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -332,17 +335,17 @@ fn parses_new_type_declaration_with_generic_args() {
                     RIGHT_BRACKET "]"
               WHITESPACE "\n            "
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_struct_generic_args() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_struct_generic_args() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = Bar[struct { bar: i32 }]
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -378,17 +381,17 @@ fn parses_new_type_declaration_with_struct_generic_args() {
                     RIGHT_BRACKET "]"
               WHITESPACE "\n            "
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_malformed_generic_args() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_malformed_generic_args() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo = Bar[i32,
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -410,19 +413,19 @@ fn parses_new_type_declaration_with_malformed_generic_args() {
                           IDENTIFIER "i32"
                     COMMA ","
               WHITESPACE "\n            "
-            error 32: expected RIGHT_BRACKET
+            error 32: expected ']'
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_generic_params_and_args() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_generic_params_and_args() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo[T] = Bar[T]
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -451,17 +454,17 @@ fn parses_new_type_declaration_with_generic_params_and_args() {
                     RIGHT_BRACKET "]"
               WHITESPACE "\n            "
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_generic_params_constraints_and_args() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_generic_params_constraints_and_args() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo[T] where T: Baz + Qux = Bar[T]
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -511,18 +514,17 @@ fn parses_new_type_declaration_with_generic_params_constraints_and_args() {
                     RIGHT_BRACKET "]"
               WHITESPACE "\n            "
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_generic_params_constraints_and_args_with_malformed_where_clause(
-) {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_generic_params_constraints_and_args_with_malformed_where_clause() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo[T] where T Baz + Qux = Bar[T]
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -572,17 +574,17 @@ fn parses_new_type_declaration_with_generic_params_constraints_and_args_with_mal
               WHITESPACE "\n            "
             error 32: expected ':'
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_malformed_generic_params_and_args() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_malformed_generic_params_and_args() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo[T = Bar[T]
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -609,20 +611,20 @@ fn parses_new_type_declaration_with_malformed_generic_params_and_args() {
                               IDENTIFIER "T"
                         RIGHT_BRACKET "]"
               WHITESPACE "\n            "
-            error 32: expected RIGHT_BRACKET
+            error 32: expected ']'
             error 32: expected '='
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parses_new_type_declaration_with_malformed_generic_params_constraints_and_args() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parses_new_type_declaration_with_malformed_generic_params_constraints_and_args() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo[T where T: Baz + Qux = Bar[T]
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -670,19 +672,19 @@ fn parses_new_type_declaration_with_malformed_generic_params_constraints_and_arg
                           IDENTIFIER "T"
                     RIGHT_BRACKET "]"
               WHITESPACE "\n            "
-            error 23: expected RIGHT_BRACKET
+            error 23: expected ']'
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parser_recovers_from_invalid_item() {
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parser_recovers_from_invalid_item() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo[ = i32 type Bar = i32
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -712,23 +714,22 @@ fn parser_recovers_from_invalid_item() {
                     IDENTIFIER "i32"
               WHITESPACE "\n            "
             error 23: expected a generic parameter
-            error 24: expected RIGHT_BRACKET
+            error 24: expected ']'
             error 24: expected '='
             error 25: expected an item
             error 28: expected an item
         "#]],
-    );
-}
+        );
+    }
 
-#[test]
-fn parser_recovers_from_invalid_type_declaration() {
-    // TODO: Improve the error diagnostics of this failure scenario
-    check(
-        EntryPoint::SourceFile,
-        r#"
+    #[test]
+    fn parser_recovers_from_invalid_type_declaration() {
+        check(
+            EntryPoint::SourceFile,
+            r#"
             type Foo { x: i32 }
             "#,
-        expect![[r#"
+            expect![[r#"
             SOURCE_FILE
               WHITESPACE "\n            "
               TYPE_DECLARATION
@@ -747,9 +748,8 @@ fn parser_recovers_from_invalid_type_declaration() {
                 WHITESPACE " "
                 RIGHT_CURLY "}"
               WHITESPACE "\n            "
-            error 21: expected '='
-            error 22: expected an item
-            error 32: expected an item
+            error 22: expected '[', '=', or 'where'
         "#]],
-    );
+        );
+    }
 }
