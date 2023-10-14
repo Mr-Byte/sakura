@@ -43,6 +43,7 @@ fn optional_item(parser: &mut Parser<'_>, marker: Marker) -> Result<(), Marker> 
         T!["const"] => todo!(),
         T!["extend"] => todo!(),
         T!["fn"] => todo!(),
+        T!["test"] => todo!(),
         _ if is_exported => {
             parser.error_and_bump("expected an item");
             marker.complete(parser, SyntaxKind::ERROR);
@@ -96,7 +97,7 @@ fn type_declaration(parser: &mut Parser, marker: Marker) {
         T!["="] => {
             parser.bump(T!["="]);
             types::type_(parser);
-        },
+        }
         _ => parser.error("expected '='"),
     }
 

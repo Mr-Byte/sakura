@@ -15,19 +15,7 @@ pub(crate) fn generate(
     let nodes = get_nodes(grammar);
     let enums = get_enums(grammar);
 
-    let node_names = grammar.nodes.iter().map(|it| &it.name);
-    let defined_nodes: HashSet<_> = node_names.collect();
-
-    for node in kinds
-        .nodes
-        .iter()
-        .map(|kind| kind.to_case(Case::Pascal))
-        .filter(|name| !defined_nodes.iter().any(|&it| it == name))
-    {
-        eprintln!("Warning: node {} not defined in ast source", node);
-
-        drop(node);
-    }
+    validate(kinds, grammar);
 
     let ast = quote! {
         use crate::T;
@@ -41,6 +29,28 @@ pub(crate) fn generate(
 
     let result = format_src(&ast.to_string())?;
     Ok(result)
+}
+
+/// Use the known kinds and nodes extracted from the grammar to validate that they're in-sync.
+fn validate(kinds: SyntaxKindsSrc, grammar: &GrammarSrc) {
+    let defined_nodes: HashSet<_> = grammar.nodes.iter().map(|it| &it.name).collect();
+
+    for node in kinds
+        .nodes
+        .iter()
+        .map(|kind| kind.to_case(Case::Pascal))
+        .filter(|name| !defined_nodes.iter().any(|&it| it == name))
+    {
+        eprintln!("Warning: node {} not defined in ast source", node);
+    }
+
+    for node in defined_nodes
+        .iter()
+        .map(|name| name.to_case(Case::UpperSnake))
+        .filter(|name| !kinds.nodes.iter().any(|kind| kind == name))
+    {
+        eprintln!("Warning: node {} not defined in syntax kinds source", node);
+    }
 }
 
 fn get_nodes(
@@ -109,14 +119,14 @@ fn get_nodes(
 fn get_enums(
     grammar: &GrammarSrc,
 ) -> impl std::iter::Iterator<Item = proc_macro2::TokenStream> + '_ {
-    grammar.enums.iter().map(|en| {
-        let variants: Vec<_> = en.variants.iter().map(|var| format_ident!("{}", var)).collect();
-        let name = format_ident!("{}", en.name);
+    grammar.enums.iter().map(|enum_| {
+        let variants: Vec<_> = enum_.variants.iter().map(|var| format_ident!("{}", var)).collect();
+        let name = format_ident!("{}", enum_.name);
         let kinds: Vec<_> = variants
             .iter()
             .map(|name| format_ident!("{}", name.to_string().to_case(Case::UpperSnake)))
             .collect();
-        let traits = en.traits.iter().map(|trait_name| {
+        let traits = enum_.traits.iter().map(|trait_name| {
             let trait_name = format_ident!("{}", trait_name);
             quote!(impl ast::#trait_name for #name {})
         });
@@ -130,7 +140,7 @@ fn get_enums(
                     fn cast(syntax: SyntaxNode) -> Option<Self> {
                         let res = match syntax.kind() {
                             #(
-                            #kinds => #name::#variants(#variants { syntax }),
+                                #kinds => #name::#variants(#variants { syntax }),
                             )*
                             _ => return None,
                         };
@@ -140,7 +150,7 @@ fn get_enums(
                     fn syntax(&self) -> &SyntaxNode {
                         match self {
                             #(
-                            #name::#variants(it) => it.syntax(),
+                                #name::#variants(it) => it.syntax(),
                             )*
                         }
                     }

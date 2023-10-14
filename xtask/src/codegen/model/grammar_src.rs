@@ -77,6 +77,7 @@ impl Field {
                     "|" => "pipe",
                     "=" => "equal",
                     ":" => "colon",
+                    ";" => "semicolon",
                     _ => name,
                 };
 
@@ -195,7 +196,7 @@ fn lower_rule(acc: &mut Vec<Field>, grammar: &Grammar, label: Option<&String>, r
                 return;
             }
 
-            panic!("uhandled rule: {rule:?}")
+            panic!("unhandled rule: {rule:?}")
         }
         Rule::Labeled { label: l, rule } => {
             assert!(label.is_none());

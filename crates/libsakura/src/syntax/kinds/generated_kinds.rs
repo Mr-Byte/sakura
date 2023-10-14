@@ -25,6 +25,7 @@ pub enum SyntaxKind {
     COMMA,
     DOT,
     COLON,
+    SEMICOLON,
     EQUAL,
     PLUS,
     MINUS,
@@ -68,7 +69,10 @@ pub enum SyntaxKind {
     TYPE_KW,
     STRUCT_KW,
     ENUM_KW,
+    UNION_KW,
     TRAIT_KW,
+    FN_KW,
+    TEST_KW,
     VAL_KW,
     VAR_KW,
     CONST_KW,
@@ -76,20 +80,26 @@ pub enum SyntaxKind {
     EXTEND_KW,
     IMPORT_KW,
     EXPORT_KW,
-    FN_KW,
     TRUE_KW,
     FALSE_KW,
     WHERE_KW,
     BOX_KW,
+    REF_KW,
+    IF_KW,
+    ELSE_KW,
+    WHILE_KW,
+    LOOP_KW,
+    FOR_KW,
+    DELEGATE_KW,
     INT_LITERAL,
     FLOAT_LITERAL,
     CHAR_LITERAL,
     BYTE_LITERAL,
     STRING_LITERAL,
     STRING_LITERAL_FRAGMENT,
+    ERROR,
     IDENTIFIER,
     WHITESPACE,
-    ERROR,
     LINE_COMMENT,
     BLOCK_COMMENT,
     INT_LITERAL_PREFIX,
@@ -99,19 +109,33 @@ pub enum SyntaxKind {
     NAME,
     LITERAL,
     EXPORT,
-    ITEM,
     TYPE_DECLARATION,
+    FUNCTION_DECLARATION,
     NAMED_TYPE,
+    BOXED_TYPE,
+    REFERENCE_TYPE,
+    INFERRED_TYPE,
+    SLICE_TYPE,
+    ARRAY_TYPE,
     STRUCT_TYPE,
     TRAIT_TYPE,
+    TRAIT_ITEM,
+    FUNCTION_TYPE,
+    FUNCTION_PARAMETER_LIST,
+    FUNCTION_PARAMETER,
     ENUM_TYPE,
     ENUM_VARIANT,
-    ENUM_VARIANT_BODY_TYPE_LIST,
-    ENUM_VARIANT_BODY_EXPR,
     ENUM_VARIANT_LIST,
+    ENUM_VARIANT_EXPRESSION,
+    UNION_TYPE,
+    UNION_TYPE_BODY,
+    UNION_TYPE_VARIANT_LIST,
+    UNION_TYPE_VARIANT,
     STRUCT_FIELD,
+    DELEGATED_FIELD,
     STRUCT_FIELD_LIST,
     TYPE_LIST,
+    PARENTHESIZED_TYPE_LIST,
     GENERIC_PARAMETER_LIST,
     TYPE_PARAMETER,
     GENERIC_ARGUMENT_LIST,
@@ -120,7 +144,8 @@ pub enum SyntaxKind {
     CONSTRAINT_LIST,
     TYPE_BOUND_LIST,
     TYPE_BOUND,
-    BINARY_EXPR,
+    BLOCK,
+    BINARY_EXPRESSION,
     INTERPOLATED_STRING,
     INTERPOLATED_STRING_PARTS,
     INTERPOLATED_STRING_SLOT,
@@ -143,6 +168,7 @@ impl SyntaxKind {
                 | COMMA
                 | DOT
                 | COLON
+                | SEMICOLON
                 | EQUAL
                 | PLUS
                 | MINUS
@@ -204,7 +230,10 @@ impl SyntaxKind {
             TYPE_KW
                 | STRUCT_KW
                 | ENUM_KW
+                | UNION_KW
                 | TRAIT_KW
+                | FN_KW
+                | TEST_KW
                 | VAL_KW
                 | VAR_KW
                 | CONST_KW
@@ -212,11 +241,17 @@ impl SyntaxKind {
                 | EXTEND_KW
                 | IMPORT_KW
                 | EXPORT_KW
-                | FN_KW
                 | TRUE_KW
                 | FALSE_KW
                 | WHERE_KW
                 | BOX_KW
+                | REF_KW
+                | IF_KW
+                | ELSE_KW
+                | WHILE_KW
+                | LOOP_KW
+                | FOR_KW
+                | DELEGATE_KW
         )
     }
 
@@ -225,7 +260,10 @@ impl SyntaxKind {
             "type" => TYPE_KW,
             "struct" => STRUCT_KW,
             "enum" => ENUM_KW,
+            "union" => UNION_KW,
             "trait" => TRAIT_KW,
+            "fn" => FN_KW,
+            "test" => TEST_KW,
             "val" => VAL_KW,
             "var" => VAR_KW,
             "const" => CONST_KW,
@@ -233,11 +271,17 @@ impl SyntaxKind {
             "extend" => EXTEND_KW,
             "import" => IMPORT_KW,
             "export" => EXPORT_KW,
-            "fn" => FN_KW,
             "true" => TRUE_KW,
             "false" => FALSE_KW,
             "where" => WHERE_KW,
             "box" => BOX_KW,
+            "ref" => REF_KW,
+            "if" => IF_KW,
+            "else" => ELSE_KW,
+            "while" => WHILE_KW,
+            "loop" => LOOP_KW,
+            "for" => FOR_KW,
+            "delegate" => DELEGATE_KW,
             _ => return None,
         };
 
@@ -255,6 +299,7 @@ impl SyntaxKind {
             ',' => COMMA,
             '.' => DOT,
             ':' => COLON,
+            ';' => SEMICOLON,
             '=' => EQUAL,
             '+' => PLUS,
             '-' => MINUS,
@@ -292,6 +337,7 @@ impl std::fmt::Display for SyntaxKind {
             COMMA => ",",
             DOT => ".",
             COLON => ":",
+            SEMICOLON => ";",
             EQUAL => "=",
             PLUS => "+",
             MINUS => "-",
@@ -335,7 +381,10 @@ impl std::fmt::Display for SyntaxKind {
             TYPE_KW => "type",
             STRUCT_KW => "struct",
             ENUM_KW => "enum",
+            UNION_KW => "union",
             TRAIT_KW => "trait",
+            FN_KW => "fn",
+            TEST_KW => "test",
             VAL_KW => "val",
             VAR_KW => "var",
             CONST_KW => "const",
@@ -343,20 +392,26 @@ impl std::fmt::Display for SyntaxKind {
             EXTEND_KW => "extend",
             IMPORT_KW => "import",
             EXPORT_KW => "export",
-            FN_KW => "fn",
             TRUE_KW => "true",
             FALSE_KW => "false",
             WHERE_KW => "where",
             BOX_KW => "box",
+            REF_KW => "ref",
+            IF_KW => "if",
+            ELSE_KW => "else",
+            WHILE_KW => "while",
+            LOOP_KW => "loop",
+            FOR_KW => "for",
+            DELEGATE_KW => "delegate",
             INT_LITERAL => stringify!(INT_LITERAL),
             FLOAT_LITERAL => stringify!(FLOAT_LITERAL),
             CHAR_LITERAL => stringify!(CHAR_LITERAL),
             BYTE_LITERAL => stringify!(BYTE_LITERAL),
             STRING_LITERAL => stringify!(STRING_LITERAL),
             STRING_LITERAL_FRAGMENT => stringify!(STRING_LITERAL_FRAGMENT),
+            ERROR => stringify!(ERROR),
             IDENTIFIER => stringify!(IDENTIFIER),
             WHITESPACE => stringify!(WHITESPACE),
-            ERROR => stringify!(ERROR),
             LINE_COMMENT => stringify!(LINE_COMMENT),
             BLOCK_COMMENT => stringify!(BLOCK_COMMENT),
             INT_LITERAL_PREFIX => stringify!(INT_LITERAL_PREFIX),
@@ -364,19 +419,33 @@ impl std::fmt::Display for SyntaxKind {
             NAME => stringify!(NAME),
             LITERAL => stringify!(LITERAL),
             EXPORT => stringify!(EXPORT),
-            ITEM => stringify!(ITEM),
             TYPE_DECLARATION => stringify!(TYPE_DECLARATION),
+            FUNCTION_DECLARATION => stringify!(FUNCTION_DECLARATION),
             NAMED_TYPE => stringify!(NAMED_TYPE),
+            BOXED_TYPE => stringify!(BOXED_TYPE),
+            REFERENCE_TYPE => stringify!(REFERENCE_TYPE),
+            INFERRED_TYPE => stringify!(INFERRED_TYPE),
+            SLICE_TYPE => stringify!(SLICE_TYPE),
+            ARRAY_TYPE => stringify!(ARRAY_TYPE),
             STRUCT_TYPE => stringify!(STRUCT_TYPE),
             TRAIT_TYPE => stringify!(TRAIT_TYPE),
+            TRAIT_ITEM => stringify!(TRAIT_ITEM),
+            FUNCTION_TYPE => stringify!(FUNCTION_TYPE),
+            FUNCTION_PARAMETER_LIST => stringify!(FUNCTION_PARAMETER_LIST),
+            FUNCTION_PARAMETER => stringify!(FUNCTION_PARAMETER),
             ENUM_TYPE => stringify!(ENUM_TYPE),
             ENUM_VARIANT => stringify!(ENUM_VARIANT),
-            ENUM_VARIANT_BODY_TYPE_LIST => stringify!(ENUM_VARIANT_BODY_TYPE_LIST),
-            ENUM_VARIANT_BODY_EXPR => stringify!(ENUM_VARIANT_BODY_EXPR),
             ENUM_VARIANT_LIST => stringify!(ENUM_VARIANT_LIST),
+            ENUM_VARIANT_EXPRESSION => stringify!(ENUM_VARIANT_EXPRESSION),
+            UNION_TYPE => stringify!(UNION_TYPE),
+            UNION_TYPE_BODY => stringify!(UNION_TYPE_BODY),
+            UNION_TYPE_VARIANT_LIST => stringify!(UNION_TYPE_VARIANT_LIST),
+            UNION_TYPE_VARIANT => stringify!(UNION_TYPE_VARIANT),
             STRUCT_FIELD => stringify!(STRUCT_FIELD),
+            DELEGATED_FIELD => stringify!(DELEGATED_FIELD),
             STRUCT_FIELD_LIST => stringify!(STRUCT_FIELD_LIST),
             TYPE_LIST => stringify!(TYPE_LIST),
+            PARENTHESIZED_TYPE_LIST => stringify!(PARENTHESIZED_TYPE_LIST),
             GENERIC_PARAMETER_LIST => stringify!(GENERIC_PARAMETER_LIST),
             TYPE_PARAMETER => stringify!(TYPE_PARAMETER),
             GENERIC_ARGUMENT_LIST => stringify!(GENERIC_ARGUMENT_LIST),
@@ -385,7 +454,8 @@ impl std::fmt::Display for SyntaxKind {
             CONSTRAINT_LIST => stringify!(CONSTRAINT_LIST),
             TYPE_BOUND_LIST => stringify!(TYPE_BOUND_LIST),
             TYPE_BOUND => stringify!(TYPE_BOUND),
-            BINARY_EXPR => stringify!(BINARY_EXPR),
+            BLOCK => stringify!(BLOCK),
+            BINARY_EXPRESSION => stringify!(BINARY_EXPRESSION),
             INTERPOLATED_STRING => stringify!(INTERPOLATED_STRING),
             INTERPOLATED_STRING_PARTS => stringify!(INTERPOLATED_STRING_PARTS),
             INTERPOLATED_STRING_SLOT => stringify!(INTERPOLATED_STRING_SLOT),
@@ -397,4 +467,4 @@ impl std::fmt::Display for SyntaxKind {
 }
 
 #[macro_export]
-macro_rules! T { ["("] => { $ crate :: syntax :: SyntaxKind :: LEFT_PAREN } ; [")"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_PAREN } ; ["{"] => { $ crate :: syntax :: SyntaxKind :: LEFT_CURLY } ; ["}"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_CURLY } ; ["["] => { $ crate :: syntax :: SyntaxKind :: LEFT_BRACKET } ; ["]"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_BRACKET } ; [","] => { $ crate :: syntax :: SyntaxKind :: COMMA } ; ["."] => { $ crate :: syntax :: SyntaxKind :: DOT } ; [":"] => { $ crate :: syntax :: SyntaxKind :: COLON } ; ["="] => { $ crate :: syntax :: SyntaxKind :: EQUAL } ; ["+"] => { $ crate :: syntax :: SyntaxKind :: PLUS } ; ["-"] => { $ crate :: syntax :: SyntaxKind :: MINUS } ; ["*"] => { $ crate :: syntax :: SyntaxKind :: STAR } ; ["/"] => { $ crate :: syntax :: SyntaxKind :: SLASH } ; ["&"] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND } ; ["|"] => { $ crate :: syntax :: SyntaxKind :: PIPE } ; ["^"] => { $ crate :: syntax :: SyntaxKind :: CARET } ; ["~"] => { $ crate :: syntax :: SyntaxKind :: TILDE } ; ["%"] => { $ crate :: syntax :: SyntaxKind :: PERCENT } ; ["@"] => { $ crate :: syntax :: SyntaxKind :: AT } ; ["#"] => { $ crate :: syntax :: SyntaxKind :: HASH } ; ["!"] => { $ crate :: syntax :: SyntaxKind :: BANG } ; ["?"] => { $ crate :: syntax :: SyntaxKind :: QUESTION } ; ["$"] => { $ crate :: syntax :: SyntaxKind :: DOLLAR } ; ["_"] => { $ crate :: syntax :: SyntaxKind :: UNDERSCORE } ; ["**"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_STAR } ; [".."] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT } ; ["..="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT_EQUAL } ; ["=="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_EQUAL } ; ["&&"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_AMPERSAND } ; ["||"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_PIPE } ; ["=>"] => { $ crate :: syntax :: SyntaxKind :: FAT_ARROW } ; ["!="] => { $ crate :: syntax :: SyntaxKind :: NOT_EQUAL } ; ["<"] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN } ; [">"] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN } ; ["<="] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN_EQUAL } ; [">="] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN_EQUAL } ; ["+="] => { $ crate :: syntax :: SyntaxKind :: PLUS_EQUAL } ; ["-="] => { $ crate :: syntax :: SyntaxKind :: MINUS_EQUAL } ; ["|="] => { $ crate :: syntax :: SyntaxKind :: PIPE_EQUAL } ; ["&="] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND_EQUAL } ; ["^="] => { $ crate :: syntax :: SyntaxKind :: CARET_EQUAL } ; ["/="] => { $ crate :: syntax :: SyntaxKind :: SLASH_EQUAL } ; ["*="] => { $ crate :: syntax :: SyntaxKind :: STAR_EQUAL } ; ["%="] => { $ crate :: syntax :: SyntaxKind :: PERCENT_EQUAL } ; ["<<"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT } ; [">>"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT } ; ["<<="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT_EQUAL } ; [">>="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT_EQUAL } ; ["type"] => { $ crate :: syntax :: SyntaxKind :: TYPE_KW } ; ["struct"] => { $ crate :: syntax :: SyntaxKind :: STRUCT_KW } ; ["enum"] => { $ crate :: syntax :: SyntaxKind :: ENUM_KW } ; ["trait"] => { $ crate :: syntax :: SyntaxKind :: TRAIT_KW } ; ["val"] => { $ crate :: syntax :: SyntaxKind :: VAL_KW } ; ["var"] => { $ crate :: syntax :: SyntaxKind :: VAR_KW } ; ["const"] => { $ crate :: syntax :: SyntaxKind :: CONST_KW } ; ["using"] => { $ crate :: syntax :: SyntaxKind :: USING_KW } ; ["extend"] => { $ crate :: syntax :: SyntaxKind :: EXTEND_KW } ; ["import"] => { $ crate :: syntax :: SyntaxKind :: IMPORT_KW } ; ["export"] => { $ crate :: syntax :: SyntaxKind :: EXPORT_KW } ; ["fn"] => { $ crate :: syntax :: SyntaxKind :: FN_KW } ; ["true"] => { $ crate :: syntax :: SyntaxKind :: TRUE_KW } ; ["false"] => { $ crate :: syntax :: SyntaxKind :: FALSE_KW } ; ["where"] => { $ crate :: syntax :: SyntaxKind :: WHERE_KW } ; ["box"] => { $ crate :: syntax :: SyntaxKind :: BOX_KW } ; ["identifier"] => { $ crate :: syntax :: SyntaxKind :: IDENTIFIER } ; }
+macro_rules! T { ["("] => { $ crate :: syntax :: SyntaxKind :: LEFT_PAREN } ; [")"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_PAREN } ; ["{"] => { $ crate :: syntax :: SyntaxKind :: LEFT_CURLY } ; ["}"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_CURLY } ; ["["] => { $ crate :: syntax :: SyntaxKind :: LEFT_BRACKET } ; ["]"] => { $ crate :: syntax :: SyntaxKind :: RIGHT_BRACKET } ; [","] => { $ crate :: syntax :: SyntaxKind :: COMMA } ; ["."] => { $ crate :: syntax :: SyntaxKind :: DOT } ; [":"] => { $ crate :: syntax :: SyntaxKind :: COLON } ; [";"] => { $ crate :: syntax :: SyntaxKind :: SEMICOLON } ; ["="] => { $ crate :: syntax :: SyntaxKind :: EQUAL } ; ["+"] => { $ crate :: syntax :: SyntaxKind :: PLUS } ; ["-"] => { $ crate :: syntax :: SyntaxKind :: MINUS } ; ["*"] => { $ crate :: syntax :: SyntaxKind :: STAR } ; ["/"] => { $ crate :: syntax :: SyntaxKind :: SLASH } ; ["&"] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND } ; ["|"] => { $ crate :: syntax :: SyntaxKind :: PIPE } ; ["^"] => { $ crate :: syntax :: SyntaxKind :: CARET } ; ["~"] => { $ crate :: syntax :: SyntaxKind :: TILDE } ; ["%"] => { $ crate :: syntax :: SyntaxKind :: PERCENT } ; ["@"] => { $ crate :: syntax :: SyntaxKind :: AT } ; ["#"] => { $ crate :: syntax :: SyntaxKind :: HASH } ; ["!"] => { $ crate :: syntax :: SyntaxKind :: BANG } ; ["?"] => { $ crate :: syntax :: SyntaxKind :: QUESTION } ; ["$"] => { $ crate :: syntax :: SyntaxKind :: DOLLAR } ; ["_"] => { $ crate :: syntax :: SyntaxKind :: UNDERSCORE } ; ["**"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_STAR } ; [".."] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT } ; ["..="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_DOT_EQUAL } ; ["=="] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_EQUAL } ; ["&&"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_AMPERSAND } ; ["||"] => { $ crate :: syntax :: SyntaxKind :: DOUBLE_PIPE } ; ["=>"] => { $ crate :: syntax :: SyntaxKind :: FAT_ARROW } ; ["!="] => { $ crate :: syntax :: SyntaxKind :: NOT_EQUAL } ; ["<"] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN } ; [">"] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN } ; ["<="] => { $ crate :: syntax :: SyntaxKind :: LESS_THAN_EQUAL } ; [">="] => { $ crate :: syntax :: SyntaxKind :: GREATER_THAN_EQUAL } ; ["+="] => { $ crate :: syntax :: SyntaxKind :: PLUS_EQUAL } ; ["-="] => { $ crate :: syntax :: SyntaxKind :: MINUS_EQUAL } ; ["|="] => { $ crate :: syntax :: SyntaxKind :: PIPE_EQUAL } ; ["&="] => { $ crate :: syntax :: SyntaxKind :: AMPERSAND_EQUAL } ; ["^="] => { $ crate :: syntax :: SyntaxKind :: CARET_EQUAL } ; ["/="] => { $ crate :: syntax :: SyntaxKind :: SLASH_EQUAL } ; ["*="] => { $ crate :: syntax :: SyntaxKind :: STAR_EQUAL } ; ["%="] => { $ crate :: syntax :: SyntaxKind :: PERCENT_EQUAL } ; ["<<"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT } ; [">>"] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT } ; ["<<="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_LEFT_EQUAL } ; [">>="] => { $ crate :: syntax :: SyntaxKind :: SHIFT_RIGHT_EQUAL } ; ["type"] => { $ crate :: syntax :: SyntaxKind :: TYPE_KW } ; ["struct"] => { $ crate :: syntax :: SyntaxKind :: STRUCT_KW } ; ["enum"] => { $ crate :: syntax :: SyntaxKind :: ENUM_KW } ; ["union"] => { $ crate :: syntax :: SyntaxKind :: UNION_KW } ; ["trait"] => { $ crate :: syntax :: SyntaxKind :: TRAIT_KW } ; ["fn"] => { $ crate :: syntax :: SyntaxKind :: FN_KW } ; ["test"] => { $ crate :: syntax :: SyntaxKind :: TEST_KW } ; ["val"] => { $ crate :: syntax :: SyntaxKind :: VAL_KW } ; ["var"] => { $ crate :: syntax :: SyntaxKind :: VAR_KW } ; ["const"] => { $ crate :: syntax :: SyntaxKind :: CONST_KW } ; ["using"] => { $ crate :: syntax :: SyntaxKind :: USING_KW } ; ["extend"] => { $ crate :: syntax :: SyntaxKind :: EXTEND_KW } ; ["import"] => { $ crate :: syntax :: SyntaxKind :: IMPORT_KW } ; ["export"] => { $ crate :: syntax :: SyntaxKind :: EXPORT_KW } ; ["true"] => { $ crate :: syntax :: SyntaxKind :: TRUE_KW } ; ["false"] => { $ crate :: syntax :: SyntaxKind :: FALSE_KW } ; ["where"] => { $ crate :: syntax :: SyntaxKind :: WHERE_KW } ; ["box"] => { $ crate :: syntax :: SyntaxKind :: BOX_KW } ; ["ref"] => { $ crate :: syntax :: SyntaxKind :: REF_KW } ; ["if"] => { $ crate :: syntax :: SyntaxKind :: IF_KW } ; ["else"] => { $ crate :: syntax :: SyntaxKind :: ELSE_KW } ; ["while"] => { $ crate :: syntax :: SyntaxKind :: WHILE_KW } ; ["loop"] => { $ crate :: syntax :: SyntaxKind :: LOOP_KW } ; ["for"] => { $ crate :: syntax :: SyntaxKind :: FOR_KW } ; ["delegate"] => { $ crate :: syntax :: SyntaxKind :: DELEGATE_KW } ; ["identifier"] => { $ crate :: syntax :: SyntaxKind :: IDENTIFIER } ; }

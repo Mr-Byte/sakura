@@ -1,4 +1,5 @@
 use clap::{Parser, ValueEnum};
+use libsakura::syntax::ast::{AstNode, Item};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -24,7 +25,25 @@ fn main() -> anyhow::Result<()> {
     );
 
     match args.mode {
-        Mode::PrintTree => print_tree(input)?,
+        Mode::PrintTree => print_items(input)?,
+    }
+
+    Ok(())
+}
+
+fn print_items(mut reader: impl std::io::Read) -> anyhow::Result<()> {
+    let mut buffer = String::new();
+    reader.read_to_string(&mut buffer)?;
+
+    let result = libsakura::SourceFile::parse(&buffer);
+
+    for item in result.tree().items() {
+        match item {
+            Item::TypeDeclaration(type_decl) => {
+                dbg!(type_decl);
+            }
+            Item::FunctionDeclaration(_) => {}
+        }
     }
 
     Ok(())

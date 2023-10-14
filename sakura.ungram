@@ -1,30 +1,60 @@
-SourceFile =
-    Item*
 
+// Items
 Export =
     'export'
 
+SourceFile =
+    Item*
+
 Item =
+      TypeDeclaration
+    | FunctionDeclaration
+
+TypeDeclaration =
     Export?
-    TypeDeclaration
+    'type' Name generic_parameters:GenericParameterList? constraints:ConstraintList? '=' body:Type
+
+FunctionDeclaration =
+    Export?
+    'fn' Name generic_parameters:GenericParameterList? constraints:ConstraintList? parameters:FunctionParameterList ':' Type body:Block
+
+FunctionParameterList =
+    '(' parameters:(FunctionParameter (',' FunctionParameter)* ','?)? ')'
+
+FunctionParameter =
+    Name ':' Type
 
 // Types
-TypeDeclaration =
-    'type' Name GenericParameterList? ConstraintList? '=' body:AnonymousType
-
-AnonymousType =
-      StructType
-    | EnumType
-    | TraitType
-
 Type =
       NamedType
+    | BoxedType
+    | ReferenceType
+    | InferredType
+    | SliceType
+    | ArrayType
     | StructType
     | EnumType
+    | UnionType
     | TraitType
+    | FunctionType
+
+BoxedType =
+    'box' Type
+
+ReferenceType =
+    'ref' Type
+
+InferredType =
+    '_'
+
+SliceType =
+    '[' Type ']'
+
+ArrayType =
+    '[' Type ';' Expression ']'
 
 NamedType =
-    'box'? Name GenericArgumentList?
+    Name GenericArgumentList?
 
 StructType =
     'struct' body:StructFieldList
@@ -35,7 +65,10 @@ StructFieldList =
     '}'
 
 StructField =
-    Name ':' Type
+    Name ':' Type DelegatedField?
+
+DelegatedField =
+    'delegate' Type
 
 EnumType =
     'enum' EnumVariantList
@@ -46,23 +79,40 @@ EnumVariantList =
     '}'
 
 EnumVariant =
-    Name body:EnumVariantBody?
+    Name expression:EnumVariantExpression?
 
-EnumVariantBody =
-      EnumVariantBodyTypeList
-    | EnumVariantBodyExpr
+EnumVariantExpression =
+    '=' value:Expression
 
-EnumVariantBodyTypeList = 
-    '(' TypeList ')'
+UnionType =
+    'union' UnionTypeBody
 
-EnumVariantBodyExpr =
-    '=' value:Expr
+UnionTypeBody =
+    UnionTypeVariantList
 
-TraitType =
-    'trait' '{' '}'
+UnionTypeVariantList =
+    '{'
+        variants:(UnionTypeVariant (',' UnionTypeVariant)* ','?)?
+    '}'
+
+UnionTypeVariant =
+    Name ParenthesizedTypeList?
 
 TypeList =
     types:(Type (',' Type)* ','?)?
+
+ParenthesizedTypeList =
+    '(' TypeList ')'
+
+TraitType =
+    'trait' '{' items:TraitItem* '}'
+
+TraitItem =
+    FunctionType
+
+FunctionType =
+    'fn' generic_parameters:GenericParameterList? constraints:ConstraintList? parameters:ParenthesizedTypeList ':' Type
+
 
 // Generics
 GenericParameterList =
@@ -86,26 +136,29 @@ Constraint =
 TypeBoundList =
     bounds:(TypeBound ('+' TypeBound)* '+'?)
 
-// TODO: Add additional bounds
 TypeBound =
     Type
 
 // Expressions
-Expr =
-      BinaryExpr
+Block =
+    '{' expressions:Expression* '}'
+
+Expression =
+      BinaryExpression
     | InterpolatedString
     | Literal
     | Name
+    | Block
 
-BinaryExpr =
-    lhs:Expr
+BinaryExpression =
+    lhs:Expression
     op:(
         '||' | '&&'
         | '==' | '!=' | '<=' | '>=' | '<' | '>'
         | '+' | '*' | '-' | '/' | '%' | '<<' | '>>' | '^' | '|' | '&'
         | '=' | '+=' | '/=' | '*=' | '%=' | '>>=' | '<<=' | '-=' | '|=' | '&=' | '^='
     )
-    rhs:Expr
+    rhs:Expression
 
 InterpolatedString =
     start:'string' parts:InterpolatedStringParts* end:'string'
@@ -114,7 +167,7 @@ InterpolatedStringParts =
     value:('string' | InterpolatedStringSlot)
 
 InterpolatedStringSlot =
-    '$' '{' Expr '}'
+    '$' '{' Expression '}'
 
 Name =
     'identifier'
