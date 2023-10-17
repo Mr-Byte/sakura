@@ -1,0 +1,13 @@
+SOURCE_FILE
+  TYPE_DECLARATION
+    TYPE_KW "type"
+    WHITESPACE " "
+    NAME
+      IDENTIFIER "Foo"
+    WHITESPACE " "
+    EQUAL "="
+    WHITESPACE " "
+    NAMED_TYPE
+      NAME
+        IDENTIFIER "i32"
+  WHITESPACE "\n"

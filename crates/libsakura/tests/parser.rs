@@ -40,6 +40,6 @@ mod test {
 
         println!("{}/{} tests passed", success, success + failed);
         println!("-----");
-        assert!(failed > 0, "one or more tests failed");
+        assert_eq!(0, failed, "one or more tests failed");
     }
 }

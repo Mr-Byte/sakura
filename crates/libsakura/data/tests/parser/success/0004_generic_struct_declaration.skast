@@ -1,0 +1,41 @@
+SOURCE_FILE
+  TYPE_DECLARATION
+    TYPE_KW "type"
+    WHITESPACE " "
+    NAME
+      IDENTIFIER "Foo"
+    GENERIC_PARAMETER_LIST
+      LEFT_BRACKET "["
+      TYPE_PARAMETER
+        NAME
+          IDENTIFIER "T"
+      RIGHT_BRACKET "]"
+    WHITESPACE " "
+    EQUAL "="
+    WHITESPACE " "
+    STRUCT_TYPE
+      STRUCT_KW "struct"
+      WHITESPACE " "
+      STRUCT_FIELD_LIST
+        LEFT_CURLY "{"
+        WHITESPACE "\n    "
+        STRUCT_FIELD
+          NAME
+            IDENTIFIER "x"
+          COLON ":"
+          WHITESPACE " "
+          NAMED_TYPE
+            NAME
+              IDENTIFIER "T"
+        COMMA ","
+        WHITESPACE "\n    "
+        STRUCT_FIELD
+          NAME
+            IDENTIFIER "y"
+          COLON ":"
+          WHITESPACE " "
+          NAMED_TYPE
+            NAME
+              IDENTIFIER "T"
+        WHITESPACE "\n"
+        RIGHT_CURLY "}"

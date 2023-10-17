@@ -1,0 +1,26 @@
+SOURCE_FILE
+  TYPE_DECLARATION
+    TYPE_KW "type"
+    WHITESPACE " "
+    NAME
+      IDENTIFIER "Foo"
+    WHITESPACE " "
+    EQUAL "="
+    WHITESPACE " "
+    STRUCT_TYPE
+      STRUCT_KW "struct"
+      WHITESPACE " "
+      STRUCT_FIELD_LIST
+        LEFT_CURLY "{"
+        WHITESPACE "\n    "
+        STRUCT_FIELD
+          NAME
+            IDENTIFIER "bar"
+          COLON ":"
+          WHITESPACE " "
+          NAMED_TYPE
+            NAME
+              IDENTIFIER "i32"
+        WHITESPACE "\n"
+        RIGHT_CURLY "}"
+  WHITESPACE "\n"

@@ -97,7 +97,7 @@ mod test {
     use crate::syntax::builder::SyntaxTreeBuilder;
     use crate::{
         syntax::{
-            ast::{Expr, InterpolatedStringSlot},
+            ast::{Expression, InterpolatedStringSlot},
             SyntaxKind,
         },
         T,
@@ -123,8 +123,8 @@ mod test {
         let value = slot.syntax.text().to_string();
         assert_eq!("${ tests }", value);
 
-        let expr = slot.expr().expect("expected an expression");
-        let Expr::Name(ident) = expr else {
+        let expr = slot.expression().expect("expected an expression");
+        let Expression::Name(ident) = expr else {
             panic!("expected an identifier");
         };
         let token = ident.identifier_token().expect("expected an identifier token");
