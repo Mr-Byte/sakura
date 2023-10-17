@@ -8,8 +8,8 @@ bitvec = "1.0.1"
 drop_bomb = "0.1.5"
 rowan = "0.15.11"
 unicode-xid = "0.2.4"
+quote = "1.0.33"
 
 [dev-dependencies]
 expect-test = "1.4.1"
-gag = "1.0.0"
 panic-control = "0.1.4"

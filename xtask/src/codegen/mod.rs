@@ -23,6 +23,7 @@ impl Codegen {
             generate_syntax_kinds(&root_path),
             generate_syntax_nodes(&root_path, &grammar),
             generate_syntax_tokens(&root_path, &grammar),
+            generate_parser_tests(&root_path),
         ];
 
         print_results(results)?;
@@ -76,6 +77,15 @@ fn generate_syntax_tokens(
 ) -> anyhow::Result<(), CodegenError> {
     let src = generators::syntax_tokens::generate(grammar)?;
     let path = root_path.join("crates/libsakura/src/syntax/ast/generated_tokens.rs");
+
+    workspace::ensure_file_contents(&path, &src)
+}
+
+fn generate_parser_tests(root_path: &std::path::Path) -> anyhow::Result<(), CodegenError> {
+    let root_path = root_path.join("crates/libsakura");
+
+    let src = generators::parser_tests::generate(&root_path)?;
+    let path = root_path.join("tests/parser.rs");
 
     workspace::ensure_file_contents(&path, &src)
 }
