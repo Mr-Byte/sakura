@@ -1,12 +1,11 @@
 use libsakura::lexer::LexedStr;
 use libsakura::parser::{EntryPoint, LexedStrStep};
+use std::fs;
+use std::panic;
+use std::path::{Path, PathBuf};
+use std::sync::Once;
 
-#[track_caller]
-pub fn check(entry: EntryPoint, input: &str, expect: expect_test::Expect) {
-    let (result, _errors) = parse(entry, input);
-
-    expect.assert_eq(&result);
-}
+static HANDLER: Once = Once::new();
 
 fn parse(entry: EntryPoint, input: &str) -> (String, bool) {
     use std::fmt::Write;
@@ -67,4 +66,90 @@ fn parse(entry: EntryPoint, input: &str) -> (String, bool) {
     }
 
     (buffer, has_errors)
+}
+
+pub struct TestCase {
+    source: PathBuf,
+    syntax: PathBuf,
+}
+
+impl TestCase {
+    pub fn list(path: impl AsRef<Path>) -> impl Iterator<Item = TestCase> {
+        let crate_root_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let test_data_dir = crate_root_dir.join("data");
+        let dir = test_data_dir.join(path);
+
+        let read_dir = fs::read_dir(&dir)
+            .unwrap_or_else(|err| panic!("unable to read directory {}: {err}", dir.display()));
+
+        read_dir.filter_map(|file| {
+            let file = file.unwrap();
+            let path = file.path();
+
+            if path.extension().unwrap_or_default() != "sk" {
+                return None;
+            }
+
+            let source = path.clone();
+            let syntax = path.with_extension("skast");
+
+            Some(TestCase { source, syntax })
+        })
+    }
+
+    pub fn run(self) -> bool {
+        install_handler();
+
+        let test_name = self.source.file_stem().and_then(|s| s.to_str());
+        let Some(test_name) = test_name else {
+            // TODO: Is this a failure?
+            return true;
+        };
+
+        print!("test {test_name} ... ");
+
+        let result = panic::catch_unwind(move || {
+            let source = fs::read_to_string(&self.source).expect("unable to read source file");
+            let syntax = fs::read_to_string(&self.syntax).expect("unable to read syntax file");
+
+            let (result, _has_errors) = parse(EntryPoint::SourceFile, &source);
+
+            assert_eq!(result, syntax, "syntax tree mismatch");
+        });
+
+        match result {
+            Ok(()) => {
+                println!("\x1b[32mok\x1b[0m");
+                true
+            }
+            Err(err) => {
+                println!("\x1b[31mfailed\x1b[0m");
+
+                if let Some(err) = err
+                    .downcast_ref::<&str>()
+                    .map(|err| *err)
+                    .or_else(|| err.downcast_ref::<String>().map(|err| &**err))
+                {
+                    println!("reason: {}", err);
+                }
+
+                false
+            }
+        }
+    }
+}
+
+pub fn install_handler() {
+    HANDLER.call_once(|| {
+        let hook = panic::take_hook();
+
+        panic::set_hook(Box::new(move |info| {
+            if info
+                .location()
+                .map_or(false, |location| !location.file().ends_with("tests/common.rs"))
+            {
+                hook(info);
+            }
+        }));
+    })
 }

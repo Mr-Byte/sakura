@@ -1,4 +1,3 @@
-use crate::parser::grammar::types::type_;
 use crate::parser::grammar::{error_block, name, types};
 use crate::parser::parser::Parser;
 use crate::syntax::SyntaxKind;
@@ -73,7 +72,7 @@ fn optional_delegated_field(parser: &mut Parser) {
     let marker = parser.start_node();
 
     parser.bump(T!["delegate"]);
-    type_(parser);
+    types::type_(parser);
 
     marker.complete(parser, SyntaxKind::DELEGATED_FIELD);
 }
